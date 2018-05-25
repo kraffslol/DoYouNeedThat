@@ -1,0 +1,15 @@
+## Interface: 70300
+
+## Title: DoYouNeedThat?
+## Author: Kraffs
+## Version: 0.0.1
+## Notes: Pesters people for loot because Personal Loot is fun!
+
+## DefaultState: Enabled
+
+Libs\LibStub\LibStub.lua
+Libs\LibItemLevel\LibItemLevel.lua
+
+Core.lua
+Util.lua
+Frame.lua
