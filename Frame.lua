@@ -1,6 +1,21 @@
 local AddonName, AddOn = ...
 local CreateFrame, unpack = CreateFrame, unpack
 
+function AddOn:repositionFrames()
+	local lastentry = nil
+	for i = 1, #AddOn.Entries do
+		local currententry = AddOn.Entries[i]
+		if currententry.itemLink then
+			if lastentry then
+				currententry:SetPoint("TOPLEFT", lastentry, "BOTTOMLEFT", 0, 1)
+			else
+				currententry:SetPoint("TOPLEFT", AddOn.lootFrame.table.content, "TOPLEFT", 0, 1)
+			end
+			lastentry = currententry
+		end
+	end
+end
+
 local function skinBackdrop(frame, ...)
 	if (frame.background) then return false end
 	
@@ -113,6 +128,7 @@ local vote_table = CreateFrame("Frame", nil, AddOn.lootFrame)
 vote_table:SetPoint("TOPLEFT", AddOn.lootFrame, "TOPLEFT", 10, -50)
 vote_table:SetPoint("BOTTOMRIGHT", AddOn.lootFrame, "BOTTOMRIGHT", -30, 10)
 skinBackdrop(vote_table, .1,.1,.1,.8)
+AddOn.lootFrame.table = vote_table
 
 local scrollframe = CreateFrame("ScrollFrame", nil, vote_table)
 scrollframe:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 0, -2)
@@ -150,10 +166,10 @@ vote_table.ilvl_text:SetText("ilvl")
 vote_table.ilvl_text:SetTextColor(1, 1, 1)
 vote_table.ilvl_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 150, 16)
 
-vote_table.whisper_text = vote_table:CreateFontString(nil, "OVERLAY", "dynt_button")
-vote_table.whisper_text:SetText("Whisper")
-vote_table.whisper_text:SetTextColor(1, 1, 1)
-vote_table.whisper_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 220, 16)
+--vote_table.whisper_text = vote_table:CreateFontString(nil, "OVERLAY", "dynt_button")
+--vote_table.whisper_text:SetText("Whisper")
+--vote_table.whisper_text:SetTextColor(1, 1, 1)
+--vote_table.whisper_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 220, 16)
 
 
 -- Test entries
@@ -201,6 +217,7 @@ for i = 1, 20 do
 		AddOn.SendWhisper(entry.itemLink, entry.looter)
 		entry.whisper:Hide()
 	end)
+	entry.whisper:Hide()
 
 	entry.delete = CreateFrame("Button", nil, entry)
 	entry.delete:SetSize(25, 20)
@@ -208,7 +225,11 @@ for i = 1, 20 do
 	entry.delete:SetText("x")
 	skinButton(entry.delete, true, "red")
 	entry.delete:SetScript("OnClick", function()
+		entry.itemLink = nil
+		entry.looter = nil
 		entry:Hide()
+		-- Re order
+		AddOn:repositionFrames()
 	end)
 
 	lastframe = entry

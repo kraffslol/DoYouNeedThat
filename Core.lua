@@ -2,7 +2,7 @@ local AddonName, AddOn = ...
 
 local _G, pairs, print, gsub, sfind, tinsert = _G, pairs, print, string.gsub, string.find, table.insert
 local GetItemInfo, IsEquippableItem, GetInventoryItemLink, UnitClass = GetItemInfo, IsEquippableItem, GetInventoryItemLink, UnitClass
-local GameTooltip = GameTooltip
+local GameTooltip, SendChatMessage, UIParent, ShowUIPanel = GameTooltip, SendChatMessage, UIParent, ShowUIPanel
 local WEAPON, ARMOR = WEAPON, ARMOR
 local LOOT_ITEM_PATTERN = gsub(LOOT_ITEM, '%%s', '(.+)')
 local LibItemLevel = LibStub("LibItemLevel")
@@ -12,17 +12,24 @@ local _, playerClass = UnitClass("player")
 AddOn.MainFrame = CreateFrame("Frame", nil, UIParent);
 AddOn.Events = {}
 AddOn.Entries = {}
-AddOn.entriesIndex = 1
+AddOn.Config = {
+	whisperMessage = "Do you need that?",
+	openAfterEncounter = true,
+	debug = true
+}
+-- AddOn.entriesIndex = 1
 
 DoYouNeedThat = AddOn
-
--- TODO: Listen on EncounterEnd, Reset Entries on EncounterEnd and open window.
 
 function AddOn.Print(msg)
 	print("[|cff3399FFDYNT|r] " .. msg)
 end
 
--- Events: CHAT_MSG_LOOT
+function AddOn.Debug(msg)
+	if (AddOn.Config.debug) then AddOn.Print(msg) end
+end
+
+-- Events: CHAT_MSG_LOOT, ENCOUNTER_END
 function AddOn.Events:CHAT_MSG_LOOT(...)
 	local message, _, _, _, looter = ...
 	local _, item = message:match(LOOT_ITEM_PATTERN)
@@ -39,16 +46,21 @@ function AddOn.Events:CHAT_MSG_LOOT(...)
 
 	local _, iLvl = LibItemLevel:GetItemInfo(item)
 
-	AddOn.Print(item .. " " .. iLvl)
+	AddOn.Debug(item .. " " .. iLvl)
 
-	if AddOn.IsItemUpgrade(iLvl, equipLoc) then
-		AddOn.Print("Item is upgrade")
+	--if AddOn.IsItemUpgrade(iLvl, equipLoc) then
+		--AddOn.Print("Item is upgrade")
 		-- TODO: Get looter and item and add to AddOn.Loot table.
 		if not sfind(looter, '-') then
 			looter = AddOn.Util.GetUnitNameWithRealm(looter)
 		end
 		AddOn.AddItemToLootTable({item, looter, iLvl})
-	end
+	--end
+end
+
+function AddOn.Events:ENCOUNTER_END()
+	AddOn:ClearEntries()
+	if AddOn.Config.openAfterEncounter then AddOn.lootFrame:Show() end
 end
 
 function AddOn.GetEquippedIlvl(slotID)
@@ -94,9 +106,35 @@ function AddOn:IsEquippableForClass(itemClass, itemSubClass, equipLoc)
 	return false
 end
 
+function AddOn:ClearEntries()
+	for i = 1, #self.Entries do
+		if self.Entries[i].itemLink then
+			self.Entries[i]:Hide()
+			self.Entries[i].itemLink = nil
+			self.Entries[i].looter = nil
+		end
+	end
+end
+
+function AddOn:GetEntry(itemLink, looter)
+	local entry = nil
+	for i = 1, #self.Entries do
+		-- If it already exists
+		if self.Entries[i].itemLink == itemLink and self.Entries[i].looter == looter then
+			return self.Entries[i]
+		end
+
+		-- Otherwise return a new one
+		if not self.Entries[i].itemLink then
+			return self.Entries[i]
+		end
+	end
+end
+
 function AddOn:AddItemToLootTable(t)
 	-- Itemlink, Looter, Ilvl
-	local entry = self.Entries[self.entriesIndex]
+	--local entry = self.Entries[self.entriesIndex]
+	local entry = self:GetEntry(t[1], t[2])
 	local _, link1, _, _, _, _, _, _, _, texture1 = GetItemInfo(t[1])
 
 	entry.itemLink = t[1]
@@ -113,13 +151,23 @@ function AddOn:AddItemToLootTable(t)
 	entry.item:SetScript("OnLeave", function() GameTooltip:Hide() end)
 	entry.ilvl:SetText(t[3])
 
+	self:repositionFrames()
+
+	entry.whisper:Show()
 	entry:Show()
 
-	self.entriesIndex = self.entriesIndex + 1
+	-- Instead of index use a forloop and check for a free one (If itemLink == null)
+	--[[local newIndex = self.entriesIndex + 1
+	if newIndex == 20 then
+		AddOn.Print("Reseting index")
+		self.entriesIndex = 1
+	else
+		self.entriesIndex = newIndex
+	end--]]
 end
 
 function AddOn.SendWhisper(itemLink, looter)
-	SendChatMessage("Hey do you need that?", "WHISPER", nil, looter)
+	SendChatMessage(AddOn.Config.whisperMessage, "WHISPER", nil, looter)
 end
 
 -- Event handler
@@ -128,13 +176,17 @@ AddOn.MainFrame:SetScript("OnEvent", function(self, event, ...) AddOn.Events[eve
 -- Register events
 for k, v in pairs(AddOn.Events) do AddOn.MainFrame:RegisterEvent(k) end
 
-SLASH_DYNT1 = "/dynt"
-SlashCmdList["DYNT"] = function()
-	AddOn.lootFrame:Show()
+local function SlashCommandHandler(msg)
+	local _, _, cmd, args = sfind(msg, "%s?(%w+)%s?(.*)")
+	if cmd == "clear" then
+		AddOn:ClearEntries()
+	elseif cmd == "test" and args ~= "" then
+		local item = {args, "Pepe", 929}
+		AddOn:AddItemToLootTable(item)
+	else
+		AddOn.lootFrame:Show()
+	end
 end
 
-SLASH_DYNTTEST1 = "/dynttest"
-SlashCmdList["DYNTTEST"] = function(msg)
-	local item = {msg, "Pepe", 929}
-	AddOn:AddItemToLootTable(item)
-end
+SLASH_DYNT1 = "/dynt"
+SlashCmdList["DYNT"] = SlashCommandHandler
