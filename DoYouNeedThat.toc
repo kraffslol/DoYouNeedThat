@@ -9,6 +9,7 @@
 
 Libs\LibStub\LibStub.lua
 Libs\LibItemLevel\LibItemLevel.lua
+Libs\LibInspect.lua
 
 Core.lua
 Util.lua

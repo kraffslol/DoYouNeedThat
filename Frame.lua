@@ -3,6 +3,9 @@ local CreateFrame, unpack = CreateFrame, unpack
 
 function AddOn:repositionFrames()
 	local lastentry = nil
+
+	-- TODO: Sort here
+
 	for i = 1, #AddOn.Entries do
 		local currententry = AddOn.Entries[i]
 		if currententry.itemLink then
@@ -151,20 +154,26 @@ vote_table.content = CreateFrame("Frame", nil, scrollframe)
 vote_table.content:SetSize(560, 340)
 scrollframe:SetScrollChild(vote_table.content)
 
-vote_table.name_text = vote_table:CreateFontString(nil, "OVERLAY", "dynt_button")
-vote_table.name_text:SetText("Looter")
-vote_table.name_text:SetTextColor(1, 1, 1)
-vote_table.name_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 10, 16)
 
 vote_table.item_text = vote_table:CreateFontString(nil, "OVERLAY", "dynt_button")
 vote_table.item_text:SetText("Item")
 vote_table.item_text:SetTextColor(1, 1, 1)
-vote_table.item_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 80, 16)
+vote_table.item_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 10, 16)
 
 vote_table.ilvl_text = vote_table:CreateFontString(nil, "OVERLAY", "dynt_button")
-vote_table.ilvl_text:SetText("ilvl")
+vote_table.ilvl_text:SetText("Ilvl")
 vote_table.ilvl_text:SetTextColor(1, 1, 1)
-vote_table.ilvl_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 150, 16)
+vote_table.ilvl_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 50, 16)
+
+vote_table.name_text = vote_table:CreateFontString(nil, "OVERLAY", "dynt_button")
+vote_table.name_text:SetText("Looter")
+vote_table.name_text:SetTextColor(1, 1, 1)
+vote_table.name_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 90, 16)
+
+vote_table.equipped_text = vote_table:CreateFontString(nil, "OVERLAY", "dynt_button")
+vote_table.equipped_text:SetText("Looter Eq")
+vote_table.equipped_text:SetTextColor(1, 1, 1)
+vote_table.equipped_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 180, 16)
 
 --vote_table.whisper_text = vote_table:CreateFontString(nil, "OVERLAY", "dynt_button")
 --vote_table.whisper_text:SetText("Whisper")
@@ -185,15 +194,10 @@ for i = 1, 20 do
 	skinBackdrop(entry, 1,1,1,.1)
 	entry:Hide()
 
-	entry.name = entry:CreateFontString(nil, "OVERLAY", "dynt_button")
-	entry.name:SetText("test")
-	entry.name:SetTextColor(1, 1, 1)
-	entry.name:SetPoint("LEFT", entry, "LEFT", 10, 0)
-
 	entry.item = CreateFrame("frame", nil, entry)
 	entry.item:SetSize(20,20)
 	--entry.item:Hide();
-	entry.item:SetPoint("LEFT", entry, "LEFT", 80, 0)
+	entry.item:SetPoint("LEFT", entry, "LEFT", 10, 0)
 	skinBackdrop(entry.item, 0, 0, 0, 1)
 
 	entry.item.tex = entry.item:CreateTexture(nil, "OVERLAY")
@@ -206,11 +210,42 @@ for i = 1, 20 do
 	entry.ilvl = entry:CreateFontString(nil, "OVERLAY", "dynt_button")
 	entry.ilvl:SetText("123")
 	entry.ilvl:SetTextColor(1, 1, 1)
-	entry.ilvl:SetPoint("LEFT", entry, "LEFT", 150, 0)
+	entry.ilvl:SetPoint("LEFT", entry, "LEFT", 50, 0)
+
+	entry.name = entry:CreateFontString(nil, "OVERLAY", "dynt_button")
+	entry.name:SetText("test")
+	entry.name:SetTextColor(1, 1, 1)
+	entry.name:SetPoint("LEFT", entry, "LEFT", 90, 0)
+
+	entry.looterEq1 = CreateFrame("frame", nil, entry)
+	entry.looterEq1:SetSize(20,20)
+	--entry.looterEq1:Hide()
+	entry.looterEq1:SetPoint("LEFT", entry, "LEFT", 180, 0)
+	skinBackdrop(entry.looterEq1, 0, 0, 0, 1)
+
+	entry.looterEq1.tex = entry.looterEq1:CreateTexture(nil, "OVERLAY")
+	entry.looterEq1.tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+	entry.looterEq1.tex:SetDrawLayer("ARTWORK")
+	entry.looterEq1.tex:SetTexture(134400)
+	entry.looterEq1.tex:SetPoint("TOPLEFT", entry.looterEq1, "TOPLEFT", 2, -2)
+	entry.looterEq1.tex:SetPoint("BOTTOMRIGHT", entry.looterEq1, "BOTTOMRIGHT", -2, 2)
+
+	entry.looterEq2 = CreateFrame("frame", nil, entry)
+	entry.looterEq2:SetSize(20,20)
+	entry.looterEq2:Hide()
+	entry.looterEq2:SetPoint("LEFT", entry, "LEFT", 205, 0)
+	skinBackdrop(entry.looterEq2, 0, 0, 0, 1)
+
+	entry.looterEq2.tex = entry.looterEq1:CreateTexture(nil, "OVERLAY")
+	entry.looterEq2.tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+	entry.looterEq2.tex:SetDrawLayer("ARTWORK")
+	entry.looterEq2.tex:SetTexture(nil)
+	entry.looterEq2.tex:SetPoint("TOPLEFT", entry.looterEq2, "TOPLEFT", 2, -2)
+	entry.looterEq2.tex:SetPoint("BOTTOMRIGHT", entry.looterEq2, "BOTTOMRIGHT", -2, 2)
 
 	entry.whisper = CreateFrame("Button", nil, entry)
 	entry.whisper:SetSize(45,20)
-	entry.whisper:SetPoint("LEFT", entry, "LEFT", 220, 0)
+	entry.whisper:SetPoint("LEFT", entry, "LEFT", 250, 0)
 	entry.whisper:SetText("Whisper")
 	skinButton(entry.whisper, true, "blue")
 	entry.whisper:SetScript("OnClick", function() 
