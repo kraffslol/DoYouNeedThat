@@ -4,11 +4,12 @@
 ## Author: Kraffs
 ## Version: 0.0.1
 ## Notes: Pesters people for loot because Personal Loot is fun!
+## SavedVariables: DyntDB
 
 ## DefaultState: Enabled
 
-Libs\LibStub\LibStub.lua
-Libs\LibItemLevel\LibItemLevel.lua
+Libs\LibStub.lua
+Libs\LibItemLevel.lua
 Libs\LibInspect.lua
 
 Core.lua

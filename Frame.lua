@@ -1,5 +1,5 @@
 local AddonName, AddOn = ...
-local CreateFrame, unpack = CreateFrame, unpack
+local CreateFrame, unpack, GetItemInfo, select = CreateFrame, unpack, GetItemInfo, select
 
 function AddOn:repositionFrames()
 	local lastentry = nil
@@ -17,6 +17,12 @@ function AddOn:repositionFrames()
 			lastentry = currententry
 		end
 	end
+end
+
+function AddOn.setItemBorderColor(frame, item)
+	local color = ITEM_QUALITY_COLORS[select(3, GetItemInfo(item))]
+	frame:SetBackdropBorderColor(color.r, color.g, color.b, 1)
+	return true
 end
 
 local function skinBackdrop(frame, ...)
@@ -111,7 +117,11 @@ AddOn.lootFrame.header = CreateFrame('frame', nil, AddOn.lootFrame)
 AddOn.lootFrame.header:EnableMouse(true)
 AddOn.lootFrame.header:RegisterForDrag('LeftButton','RightButton')
 AddOn.lootFrame.header:SetScript("OnDragStart", function(self) AddOn.lootFrame:StartMoving() end)
-AddOn.lootFrame.header:SetScript("OnDragStop", function(self) AddOn.lootFrame:StopMovingOrSizing() end)
+AddOn.lootFrame.header:SetScript("OnDragStop", function(self)
+	AddOn.lootFrame:StopMovingOrSizing() 
+	local point, _, _, x, y = AddOn.lootFrame:GetPoint()
+	DyntDB.lootWindow = { point, x, y }
+end)
 AddOn.lootFrame.header:SetPoint("TOPLEFT", AddOn.lootFrame, "TOPLEFT")
 AddOn.lootFrame.header:SetPoint("BOTTOMRIGHT", AddOn.lootFrame, "TOPRIGHT", 0, -24)
 skinBackdrop(AddOn.lootFrame.header,.1,.1,.1,1)
@@ -173,7 +183,7 @@ vote_table.name_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 90, 16)
 vote_table.equipped_text = vote_table:CreateFontString(nil, "OVERLAY", "dynt_button")
 vote_table.equipped_text:SetText("Looter Eq")
 vote_table.equipped_text:SetTextColor(1, 1, 1)
-vote_table.equipped_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 180, 16)
+vote_table.equipped_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 175, 16)
 
 --vote_table.whisper_text = vote_table:CreateFontString(nil, "OVERLAY", "dynt_button")
 --vote_table.whisper_text:SetText("Whisper")
@@ -185,7 +195,7 @@ vote_table.equipped_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 180, 16)
 local lastframe = nil
 for i = 1, 20 do
 	local entry = CreateFrame("Button", nil, vote_table.content)
-	entry:SetSize(vote_table.content:GetWidth(), 22)
+	entry:SetSize(vote_table.content:GetWidth(), 24)
 	if (lastframe) then
 		entry:SetPoint("TOPLEFT", lastframe, "BOTTOMLEFT", 0, 2)
 	else
@@ -233,7 +243,7 @@ for i = 1, 20 do
 	entry.looterEq2 = CreateFrame("frame", nil, entry)
 	entry.looterEq2:SetSize(20,20)
 	entry.looterEq2:Hide()
-	entry.looterEq2:SetPoint("LEFT", entry, "LEFT", 205, 0)
+	entry.looterEq2:SetPoint("LEFT", entry, "LEFT", 202, 0)
 	skinBackdrop(entry.looterEq2, 0, 0, 0, 1)
 
 	entry.looterEq2.tex = entry.looterEq1:CreateTexture(nil, "OVERLAY")
