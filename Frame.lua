@@ -128,7 +128,7 @@ AddOn.lootFrame:SetUserPlaced(true)
 AddOn.lootFrame:SetFrameStrata("DIALOG")
 AddOn.lootFrame:SetFrameLevel(1)
 AddOn.lootFrame:SetClampedToScreen(true)
-AddOn.lootFrame:SetSize(600, 400)
+AddOn.lootFrame:SetSize(380, 200)
 AddOn.lootFrame:SetPoint("CENTER")
 AddOn.lootFrame:Hide()
 
@@ -171,7 +171,7 @@ vote_table.scrollframe = scrollframe
 local scrollbar = CreateFrame("Slider", nil, scrollframe, "UIPanelScrollBarTemplate")
 scrollbar:SetPoint("TOPLEFT", vote_table, "TOPRIGHT", 6, -16) 
 scrollbar:SetPoint("BOTTOMLEFT", vote_table, "BOTTOMRIGHT", 0, 16)
-scrollbar:SetMinMaxValues(1, 200)
+scrollbar:SetMinMaxValues(1, 60)
 scrollbar:SetValueStep(1)
 scrollbar.scrollStep = 1
 scrollbar:SetValue(0)
@@ -181,7 +181,7 @@ skinBackdrop(scrollbar, .1,.1,.1,.8)
 vote_table.scrollbar = scrollbar
 
 vote_table.content = CreateFrame("Frame", nil, scrollframe)
-vote_table.content:SetSize(560, 340)
+vote_table.content:SetSize(340, 140)
 scrollframe:SetScrollChild(vote_table.content)
 
 
@@ -275,7 +275,7 @@ for i = 1, 20 do
 
 	entry.whisper = CreateFrame("Button", nil, entry)
 	entry.whisper:SetSize(45,20)
-	entry.whisper:SetPoint("LEFT", entry, "LEFT", 250, 0)
+	entry.whisper:SetPoint("RIGHT", entry, "RIGHT", -30, 0)
 	entry.whisper:SetText("Whisper")
 	skinButton(entry.whisper, true, "blue")
 	entry.whisper:SetScript("OnClick", function() 
