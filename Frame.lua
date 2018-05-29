@@ -1,10 +1,14 @@
 local AddonName, AddOn = ...
 local CreateFrame, unpack, GetItemInfo, select, GetItemInfoInstant = CreateFrame, unpack, GetItemInfo, select, GetItemInfoInstant
+local ITEM_QUALITY_COLORS, CreateFont, UIParent = ITEM_QUALITY_COLORS, CreateFont, UIParent
+local tsort, tonumber = table.sort, tonumber
 
 function AddOn:repositionFrames()
 	local lastentry = nil
 
-	-- TODO: Sort here
+	tsort(AddOn.Entries, function(a,b)
+		return tonumber(a.ilvl:GetText()) > tonumber(b.ilvl:GetText())
+	end)
 
 	for i = 1, #AddOn.Entries do
 		local currententry = AddOn.Entries[i]
@@ -136,7 +140,7 @@ AddOn.lootFrame.header:SetScript("OnDragStart", function(self) AddOn.lootFrame:S
 AddOn.lootFrame.header:SetScript("OnDragStop", function(self)
 	AddOn.lootFrame:StopMovingOrSizing() 
 	local point, _, _, x, y = AddOn.lootFrame:GetPoint()
-	DyntDB.lootWindow = { point, x, y }
+	AddOn.db.lootWindow = { point, x, y }
 end)
 AddOn.lootFrame.header:SetPoint("TOPLEFT", AddOn.lootFrame, "TOPLEFT")
 AddOn.lootFrame.header:SetPoint("BOTTOMRIGHT", AddOn.lootFrame, "TOPRIGHT", 0, -24)
@@ -146,7 +150,7 @@ AddOn.lootFrame.header.close = CreateFrame("Button", nil, AddOn.lootFrame.header
 AddOn.lootFrame.header.close:SetPoint("RIGHT", AddOn.lootFrame.header, "RIGHT", -4, 0)
 AddOn.lootFrame.header.close:SetText("x")
 skinButton(AddOn.lootFrame.header.close, true, "red")
-AddOn.lootFrame.header.close:SetScript("OnClick", function() AddOn.lootFrame:Hide() end)
+AddOn.lootFrame.header.close:SetScript("OnClick", function() AddOn.lootFrame:Hide() AddOn.lootFrameOpen = false end)
 
 AddOn.lootFrame.header.text = AddOn.lootFrame.header:CreateFontString(nil, "OVERLAY", "dynt_large_text")
 AddOn.lootFrame.header.text:SetText("|cFFFF6B6BDoYouNeedThat")
@@ -234,7 +238,7 @@ for i = 1, 20 do
 	entry.item.tex:SetPoint("BOTTOMRIGHT", entry.item, "BOTTOMRIGHT", -2, 2)
 
 	entry.ilvl = entry:CreateFontString(nil, "OVERLAY", "dynt_normal_text")
-	entry.ilvl:SetText("123")
+	entry.ilvl:SetText("0")
 	entry.ilvl:SetTextColor(1, 1, 1)
 	entry.ilvl:SetPoint("LEFT", entry, "LEFT", 50, 0)
 

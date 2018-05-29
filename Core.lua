@@ -4,7 +4,8 @@ local _G, pairs, print, gsub, sfind, tinsert = _G, pairs, print, string.gsub, st
 local GetItemInfo, IsEquippableItem, GetInventoryItemLink, UnitClass, GetItemInfoInstant = GetItemInfo, IsEquippableItem, GetInventoryItemLink, UnitClass, GetItemInfoInstant
 local GameTooltip, SendChatMessage, UIParent, ShowUIPanel, select = GameTooltip, SendChatMessage, UIParent, ShowUIPanel, select
 local UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo = UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo
-local C_Timer = C_Timer
+local C_Timer, GetPlayerInfoByGUID, InCombatLockdown, time = C_Timer, GetPlayerInfoByGUID, InCombatLockdown, time
+local UnitIsConnected, CanInspect, UnitName = UnitIsConnected, CanInspect, UnitName
 local WEAPON, ARMOR = WEAPON, ARMOR
 local LOOT_ITEM_PATTERN = gsub(LOOT_ITEM, '%%s', '(.+)')
 local LibItemLevel = LibStub("LibItemLevel")
@@ -20,18 +21,18 @@ local _, playerClass = UnitClass("player")
 		* 8.0 Look into Item class (ContinueOnItemLoad Usage: NonEmptyItem:ContinueOnLoad(callbackFunction))
 		* Test: DoesItemContainSpec(link, classID)
 		* RaidMembers cleanup
+		* Config/Options frame
+		* 5-man group inspect
 --]]
 
 AddOn.MainFrame = CreateFrame("Frame", nil, UIParent);
+AddOn.db = {}
 AddOn.Events = {}
 AddOn.Entries = {}
 AddOn.RaidMembers = {}
 AddOn.inspectCount = 1
-AddOn.Config = {
-	whisperMessage = "Do you need [item]?",
-	openAfterEncounter = true,
-	debug = true
-}
+AddOn.Config = {}
+AddOn.lootFrameOpen = false
 -- AddOn.entriesIndex = 1
 
 DoYouNeedThat = AddOn
@@ -78,31 +79,23 @@ end
 
 function AddOn.Events:ENCOUNTER_END(...)
 	local _, _, _, _, success = ...
+	local _, _, difficulty = GetInstanceInfo()
 	AddOn:ClearEntries()
-	if AddOn.Config.openAfterEncounter and success then AddOn.lootFrame:Show() end
+	if AddOn.Config.openAfterEncounter and success and difficulty ~= 8 then AddOn.lootFrame:Show() end
 end
-
---[[function AddOn.Events:GROUP_ROSTER_UPDATE()
-	AddOn.Debug("Roster update")
-	AddOn.InspectGroup()
-end]]
 
 function AddOn.Events:PLAYER_ENTERING_WORLD()
 	--AddOn.MainFrame:RegisterEvent("CHAT_MSG_LOOT")
-	--AddOn.MainFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 	local _, instanceType = GetInstanceInfo()
 	if instanceType == "none" then
 		AddOn.Debug("Not in instance, unregistering events")
 		AddOn.MainFrame:UnregisterEvent("CHAT_MSG_LOOT")
 		AddOn.MainFrame:UnregisterEvent("ENCOUNTER_END")
-		--AddOn.MainFrame:UnregisterEvent("GROUP_ROSTER_UPDATE")
 		return
 	end
 	AddOn.Debug("In instance, registering events")
 	AddOn.MainFrame:RegisterEvent("CHAT_MSG_LOOT")
 	AddOn.MainFrame:RegisterEvent("ENCOUNTER_END")
-	--AddOn.MainFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-	--AddOn.InspectGroup()
 end
 
 function AddOn.Events:ADDON_LOADED(addon)
@@ -120,10 +113,12 @@ function AddOn.Events:ADDON_LOADED(addon)
 		}
 	end
 
+	AddOn.db = DyntDB
+
 	-- Set window position
-	AddOn.lootFrame:SetPoint(DyntDB.lootWindow[1], DyntDB.lootWindow[2], DyntDB.lootWindow[3])
+	AddOn.lootFrame:SetPoint(AddOn.db.lootWindow[1], AddOn.db.lootWindow[2], AddOn.db.lootWindow[3])
 	-- Replace config with saved one
-	AddOn.Config = DyntDB.config
+	AddOn.Config = AddOn.db.config
 
 	-- TODO: Move this to PLAYER_ENTERING_WORLD, Only start it if you are in raid/dungeon, Cancel it if not
 	-- Set repeated timer to check for raidmembers inventory
@@ -268,16 +263,18 @@ function AddOn.InspectPlayer(unit)
 end
 
 function AddOn.InspectGroup()
-	if not IsInRaid() or InCombatLockdown() then
-		return
-	end
+	local isInRaid = IsInRaid()
+	if not isInRaid and not IsInGroup() or InCombatLockdown() then return end
+	--local max = isInRaid and 40 or 5
+	local max = GetNumGroupMembers()
+	local unit = isInRaid and "raid" or "party"
 	local i = AddOn.inspectCount
 	local curTime = time()
 
-	while i <= 40 do
-		local guid = UnitGUID("raid"..i)
-		if (AddOn.RaidMembers[guid] == nil or AddOn.RaidMembers[guid].maxAge <= curTime) and AddOn.InspectPlayer("raid"..i) then
-			AddOn.Debug("New character to inspect " .. 	i)
+	while i <= max do
+		local guid = UnitGUID(unit..i)
+		if (AddOn.RaidMembers[guid] == nil or AddOn.RaidMembers[guid].maxAge <= curTime) and AddOn.InspectPlayer(unit..i) then
+			--AddOn.Debug("New character to inspect " .. 	i)
 			break
 		end
 		i = i + 1
@@ -285,7 +282,7 @@ function AddOn.InspectGroup()
 	--  GetNumGroupMembers() "group"..i
 
 	i = i + 1
-	if i > 40 then
+	if i > max then
 		i = 1
 	end
 	AddOn.inspectCount = i
@@ -295,7 +292,7 @@ LibInspect:SetMaxAge(599)
 LibInspect:AddHook(AddonName, "items", function(guid, data, age)
 	if data then
 		local _, _, _, _, _, name, realm = GetPlayerInfoByGUID(guid)
-		AddOn.Debug(name .. "-" .. realm)
+		--AddOn.Debug(name .. "-" .. realm)
 		AddOn.RaidMembers[guid] = {
 			items = data.items,
 			maxAge = time() + 600
@@ -327,10 +324,16 @@ local function SlashCommandHandler(msg)
 		LibInspect:RequestData("items", "player", false)
 		AddOn:AddItemToLootTable(item)
 	elseif cmd == "debug" then
-		DyntDB.config.debug = not DyntDB.config.debug
-		print(AddOn.Config.debug)
+		AddOn.Config.debug = not AddOn.Config.debug
+		AddOn.Print("Debug mode " .. (AddOn.Config.debug and "enabled" or "disabled"))
 	else
-		AddOn.lootFrame:Show()
+		if not AddOn.lootFrameOpen then
+			AddOn.lootFrame:Show()
+			AddOn.lootFrameOpen = true
+		else
+			AddOn.lootFrame:Hide()
+			AddOn.lootFrameOpen = false
+		end		
 	end
 end
 
