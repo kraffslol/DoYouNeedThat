@@ -1,5 +1,5 @@
 local AddonName, AddOn = ...
-local CreateFrame, unpack, GetItemInfo, select = CreateFrame, unpack, GetItemInfo, select
+local CreateFrame, unpack, GetItemInfo, select, GetItemInfoInstant = CreateFrame, unpack, GetItemInfo, select, GetItemInfoInstant
 
 function AddOn:repositionFrames()
 	local lastentry = nil
@@ -23,6 +23,15 @@ function AddOn.setItemBorderColor(frame, item)
 	local color = ITEM_QUALITY_COLORS[select(3, GetItemInfo(item))]
 	frame:SetBackdropBorderColor(color.r, color.g, color.b, 1)
 	return true
+end
+
+function AddOn.setItemTooltip(frame, item)
+	local tex = select(5, GetItemInfoInstant(item))
+	frame.tex:SetTexture(tex)
+	frame:SetScript("OnEnter", function() AddOn.ShowItemTooltip(item) end)
+	frame:SetScript("OnLeave", function() AddOn.HideItemTooltip() end)
+	AddOn.setItemBorderColor(frame, item)
+	frame:Show()
 end
 
 local function skinBackdrop(frame, ...)
@@ -88,16 +97,23 @@ local function skinButton(frame, small, color)
 end
 
 local normal_button_text = CreateFont("dynt_button")
-normal_button_text:SetFont("Fonts\\ARIALN.TTF", 13)
+normal_button_text:SetFont("Interface\\AddOns\\DoYouNeedThat\\Media\\Roboto-Medium.ttf", 12)
 normal_button_text:SetTextColor(1,1,1,1)
 normal_button_text:SetShadowColor(0, 0, 0)
 normal_button_text:SetShadowOffset(1, -1)
 normal_button_text:SetJustifyH("CENTER")
 
 local large_font = CreateFont("dynt_large_text")
-large_font:SetFont("Fonts\\ARIALN.TTF", 14)
+large_font:SetFont("Interface\\AddOns\\DoYouNeedThat\\Media\\Roboto-Medium.ttf", 14)
 large_font:SetShadowColor(0, 0, 0)
 large_font:SetShadowOffset(1, -1)
+
+local normal_font = CreateFont("dynt_normal_text")
+normal_font:SetFont("Interface\\AddOns\\DoYouNeedThat\\Media\\Roboto-Medium.ttf", 11)
+normal_font:SetTextColor(1,1,1,1)
+normal_font:SetShadowColor(0, 0, 0)
+normal_font:SetShadowOffset(1, -1)
+normal_font:SetJustifyH("CENTER")
 
 -- Window
 AddOn.lootFrame = CreateFrame('frame', 'DYNT', UIParent)
@@ -207,7 +223,7 @@ for i = 1, 20 do
 	entry.item = CreateFrame("frame", nil, entry)
 	entry.item:SetSize(20,20)
 	--entry.item:Hide();
-	entry.item:SetPoint("LEFT", entry, "LEFT", 10, 0)
+	entry.item:SetPoint("LEFT", entry, "LEFT", 12, 0)
 	skinBackdrop(entry.item, 0, 0, 0, 1)
 
 	entry.item.tex = entry.item:CreateTexture(nil, "OVERLAY")
@@ -217,12 +233,12 @@ for i = 1, 20 do
 	entry.item.tex:SetPoint("TOPLEFT", entry.item, "TOPLEFT", 2, -2)
 	entry.item.tex:SetPoint("BOTTOMRIGHT", entry.item, "BOTTOMRIGHT", -2, 2)
 
-	entry.ilvl = entry:CreateFontString(nil, "OVERLAY", "dynt_button")
+	entry.ilvl = entry:CreateFontString(nil, "OVERLAY", "dynt_normal_text")
 	entry.ilvl:SetText("123")
 	entry.ilvl:SetTextColor(1, 1, 1)
 	entry.ilvl:SetPoint("LEFT", entry, "LEFT", 50, 0)
 
-	entry.name = entry:CreateFontString(nil, "OVERLAY", "dynt_button")
+	entry.name = entry:CreateFontString(nil, "OVERLAY", "dynt_normal_text")
 	entry.name:SetText("test")
 	entry.name:SetTextColor(1, 1, 1)
 	entry.name:SetPoint("LEFT", entry, "LEFT", 90, 0)
@@ -230,7 +246,7 @@ for i = 1, 20 do
 	entry.looterEq1 = CreateFrame("frame", nil, entry)
 	entry.looterEq1:SetSize(20,20)
 	--entry.looterEq1:Hide()
-	entry.looterEq1:SetPoint("LEFT", entry, "LEFT", 180, 0)
+	entry.looterEq1:SetPoint("LEFT", entry, "LEFT", 181, 0)
 	skinBackdrop(entry.looterEq1, 0, 0, 0, 1)
 
 	entry.looterEq1.tex = entry.looterEq1:CreateTexture(nil, "OVERLAY")
@@ -243,7 +259,7 @@ for i = 1, 20 do
 	entry.looterEq2 = CreateFrame("frame", nil, entry)
 	entry.looterEq2:SetSize(20,20)
 	entry.looterEq2:Hide()
-	entry.looterEq2:SetPoint("LEFT", entry, "LEFT", 202, 0)
+	entry.looterEq2:SetPoint("LEFT", entry, "LEFT", 203, 0)
 	skinBackdrop(entry.looterEq2, 0, 0, 0, 1)
 
 	entry.looterEq2.tex = entry.looterEq1:CreateTexture(nil, "OVERLAY")

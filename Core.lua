@@ -4,6 +4,7 @@ local _G, pairs, print, gsub, sfind, tinsert = _G, pairs, print, string.gsub, st
 local GetItemInfo, IsEquippableItem, GetInventoryItemLink, UnitClass, GetItemInfoInstant = GetItemInfo, IsEquippableItem, GetInventoryItemLink, UnitClass, GetItemInfoInstant
 local GameTooltip, SendChatMessage, UIParent, ShowUIPanel, select = GameTooltip, SendChatMessage, UIParent, ShowUIPanel, select
 local UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo = UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo
+local C_Timer = C_Timer
 local WEAPON, ARMOR = WEAPON, ARMOR
 local LOOT_ITEM_PATTERN = gsub(LOOT_ITEM, '%%s', '(.+)')
 local LibItemLevel = LibStub("LibItemLevel")
@@ -18,12 +19,14 @@ local _, playerClass = UnitClass("player")
 			https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/FrameXML/LevelUpDisplay.lua#L1450-L1468
 		* 8.0 Look into Item class (ContinueOnItemLoad Usage: NonEmptyItem:ContinueOnLoad(callbackFunction))
 		* Test: DoesItemContainSpec(link, classID)
+		* RaidMembers cleanup
 --]]
 
 AddOn.MainFrame = CreateFrame("Frame", nil, UIParent);
 AddOn.Events = {}
 AddOn.Entries = {}
 AddOn.RaidMembers = {}
+AddOn.inspectCount = 1
 AddOn.Config = {
 	whisperMessage = "Do you need [item]?",
 	openAfterEncounter = true,
@@ -63,11 +66,13 @@ function AddOn.Events:CHAT_MSG_LOOT(...)
 	--if AddOn.IsItemUpgrade(iLvl, equipLoc) then
 		--AddOn.Print("Item is upgrade")
 		if not sfind(looter, '-') then
-			looter = AddOn.Util.GetUnitNameWithRealm(looter)
+			looter = AddOn.Utils.GetUnitNameWithRealm(looter)
 			AddOn.Debug(looter)
 		end
 		AddOn.Debug(looter)
-		AddOn:AddItemToLootTable({item, looter, iLvl})
+		local t = {item, looter, iLvl}
+		AddOn.Debug(t[1] .. " " .. t[2] .. " " .. t[3])
+		AddOn:AddItemToLootTable(t)
 	--end
 end
 
@@ -77,24 +82,27 @@ function AddOn.Events:ENCOUNTER_END(...)
 	if AddOn.Config.openAfterEncounter and success then AddOn.lootFrame:Show() end
 end
 
-function AddOn.Events:GROUP_ROSTER_UPDATE()
-	AddOn.GetRaidItems()
-end
+--[[function AddOn.Events:GROUP_ROSTER_UPDATE()
+	AddOn.Debug("Roster update")
+	AddOn.InspectGroup()
+end]]
 
 function AddOn.Events:PLAYER_ENTERING_WORLD()
+	--AddOn.MainFrame:RegisterEvent("CHAT_MSG_LOOT")
+	--AddOn.MainFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 	local _, instanceType = GetInstanceInfo()
 	if instanceType == "none" then
 		AddOn.Debug("Not in instance, unregistering events")
 		AddOn.MainFrame:UnregisterEvent("CHAT_MSG_LOOT")
 		AddOn.MainFrame:UnregisterEvent("ENCOUNTER_END")
-		AddOn.MainFrame:UnregisterEvent("GROUP_ROSTER_UPDATE")
+		--AddOn.MainFrame:UnregisterEvent("GROUP_ROSTER_UPDATE")
 		return
 	end
 	AddOn.Debug("In instance, registering events")
 	AddOn.MainFrame:RegisterEvent("CHAT_MSG_LOOT")
 	AddOn.MainFrame:RegisterEvent("ENCOUNTER_END")
-	AddOn.MainFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-	AddOn.GetRaidItems()
+	--AddOn.MainFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+	--AddOn.InspectGroup()
 end
 
 function AddOn.Events:ADDON_LOADED(addon)
@@ -103,12 +111,23 @@ function AddOn.Events:ADDON_LOADED(addon)
 
 	if DyntDB == nil then
 		DyntDB = {
-			lootWindow = {"CENTER", 0, 0}
+			lootWindow = {"CENTER", 0, 0},
+			config = {
+				whisperMessage = "Do you need [item]?",
+				openAfterEncounter = true,
+				debug = false
+			}
 		}
 	end
 
-	-- Set window position here
+	-- Set window position
 	AddOn.lootFrame:SetPoint(DyntDB.lootWindow[1], DyntDB.lootWindow[2], DyntDB.lootWindow[3])
+	-- Replace config with saved one
+	AddOn.Config = DyntDB.config
+
+	-- TODO: Move this to PLAYER_ENTERING_WORLD, Only start it if you are in raid/dungeon, Cancel it if not
+	-- Set repeated timer to check for raidmembers inventory
+	local ticker = C_Timer.NewTicker(7, function() AddOn.InspectGroup() end)
 end
 
 function AddOn.GetEquippedIlvlBySlotID(slotID)
@@ -182,11 +201,10 @@ end
 
 function AddOn:AddItemToLootTable(t)
 	-- Itemlink, Looter, Ilvl
-	--local entry = self.Entries[self.entriesIndex]
 	AddOn.Debug("Adding item to entries")
 	local entry = self:GetEntry(t[1], t[2])
 	local _, _, _, equipLoc, texture = GetItemInfoInstant(t[1])
-	local character = t[2]:match("(.*)%-")
+	local character = t[2]:match("(.*)%-") or t[2]
 
 	entry.itemLink = t[1]
 	entry.looter = t[2]
@@ -197,51 +215,25 @@ function AddOn:AddItemToLootTable(t)
 		local raidMember = AddOn.RaidMembers[entry.guid]
 		local item, item2 = nil, nil
 		if equipLoc == "INVTYPE_FINGER" then 
-			item = raidMember.items[11]
-			item2 = raidMember.items[12]
+			item, item2 = raidMember.items[11], raidMember.items[12]
 		elseif equipLoc == "INVTYPE_TRINKET" then
-			item = raidMember.items[13]
-			item2 = raidMember.items[14]
+			item, item2 = raidMember.items[13], raidMember.items[14]
 		else
 			local slotId = AddOn.Utils.GetSlotID(equipLoc)
 			item = raidMember.items[slotId]
 		end
-		local tex = select(5, GetItemInfoInstant(item))
-		entry.looterEq1.tex:SetTexture(tex)
-		entry.looterEq1:SetScript("OnEnter", function() AddOn.ShowItemTooltip(item) end)
-		entry.looterEq1:SetScript("OnLeave", function() AddOn.HideItemTooltip() end)
-		AddOn.setItemBorderColor(entry.looterEq1, item)
-
-		if item2 ~= nil then
-			local tex2 = select(5, GetItemInfoInstant(item2))
-			entry.looterEq2.tex:SetTexture(tex2)
-			entry.looterEq2:SetScript("OnEnter", function() AddOn.ShowItemTooltip(item2) end)
-			entry.looterEq2:SetScript("OnLeave", function() AddOn.HideItemTooltip() end)
-			AddOn.setItemBorderColor(entry.looterEq2, item)
-			entry.looterEq2:Show()
-		end
+		AddOn.setItemTooltip(entry.looterEq1, item)
+		if item2 ~= nil then AddOn.setItemTooltip(entry.looterEq2, item2) end
 	end
 
 	entry.name:SetText(character)
-	entry.item.tex:SetTexture(texture)
-	AddOn.setItemBorderColor(entry.item, t[1])
-	entry.item:SetScript("OnEnter", function() AddOn.ShowItemTooltip(t[1]) end)
-	entry.item:SetScript("OnLeave", function() AddOn.HideItemTooltip() end)
+	AddOn.setItemTooltip(entry.item, t[1])
 	entry.ilvl:SetText(t[3])
 
 	self:repositionFrames()
 
 	entry.whisper:Show()
 	entry:Show()
-
-	-- Instead of index use a forloop and check for a free one (If itemLink == null)
-	--[[local newIndex = self.entriesIndex + 1
-	if newIndex == 20 then
-		AddOn.Print("Reseting index")
-		self.entriesIndex = 1
-	else
-		self.entriesIndex = newIndex
-	end--]]
 end
 
 function AddOn.ShowItemTooltip(itemLink)
@@ -263,24 +255,50 @@ function AddOn.SendWhisper(itemLink, looter)
 	SendChatMessage(message, "WHISPER", nil, looter)
 end
 
-function AddOn.GetRaidItems()
-	if IsInRaid() then
-		for i = 1, GetNumGroupMembers() do
-			local guid = UnitGUID("raid"..i)
-			LibInspect:RequestData("items", "raid"..i, false)
-		end
-	else
-		for i = 1, GetNumGroupMembers() do
-			local guid = UnitGUID("group"..i)
-			LibInspect:RequestData("items", "group"..i, false)
-		end
+function AddOn.InspectPlayer(unit)
+	if not (UnitIsConnected(unit) and CanInspect(unit) and not InCombatLockdown()) then
+		return false
 	end
+
+	local canInspect, unitFound = LibInspect:RequestData("items", unit, false)
+	if not canInspect or not unitFound then 
+		return false
+	end
+	return true
 end
 
-LibInspect:AddHook("DoYouNeedThat", "items", function(guid, data, age)
+function AddOn.InspectGroup()
+	if not IsInRaid() or InCombatLockdown() then
+		return
+	end
+	local i = AddOn.inspectCount
+	local curTime = time()
+
+	while i <= 40 do
+		local guid = UnitGUID("raid"..i)
+		if (AddOn.RaidMembers[guid] == nil or AddOn.RaidMembers[guid].maxAge <= curTime) and AddOn.InspectPlayer("raid"..i) then
+			AddOn.Debug("New character to inspect " .. 	i)
+			break
+		end
+		i = i + 1
+	end
+	--  GetNumGroupMembers() "group"..i
+
+	i = i + 1
+	if i > 40 then
+		i = 1
+	end
+	AddOn.inspectCount = i
+end
+
+LibInspect:SetMaxAge(599)
+LibInspect:AddHook(AddonName, "items", function(guid, data, age)
 	if data then
+		local _, _, _, _, _, name, realm = GetPlayerInfoByGUID(guid)
+		AddOn.Debug(name .. "-" .. realm)
 		AddOn.RaidMembers[guid] = {
-			items = data.items
+			items = data.items,
+			maxAge = time() + 600
 		}
 	end
 end)
@@ -296,7 +314,8 @@ local function SlashCommandHandler(msg)
 	if cmd == "clear" then
 		AddOn:ClearEntries()
 	elseif cmd == "test" and args ~= "" then
-		local item = {args, "Lootcouncil-TarrenMill"}
+		local player = UnitName("player")
+		local item = {args, player}
 		local _, iLvl = LibItemLevel:GetItemInfo(args)
 		item[3] = iLvl
 		--[[local guid = UnitGUID("player")
@@ -307,6 +326,9 @@ local function SlashCommandHandler(msg)
 		}]]
 		LibInspect:RequestData("items", "player", false)
 		AddOn:AddItemToLootTable(item)
+	elseif cmd == "debug" then
+		DyntDB.config.debug = not DyntDB.config.debug
+		print(AddOn.Config.debug)
 	else
 		AddOn.lootFrame:Show()
 	end
