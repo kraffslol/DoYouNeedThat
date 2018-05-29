@@ -5,7 +5,7 @@ local GetItemInfo, IsEquippableItem, GetInventoryItemLink, UnitClass, GetItemInf
 local GameTooltip, SendChatMessage, UIParent, ShowUIPanel, select = GameTooltip, SendChatMessage, UIParent, ShowUIPanel, select
 local UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo = UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo
 local C_Timer, GetPlayerInfoByGUID, InCombatLockdown, time = C_Timer, GetPlayerInfoByGUID, InCombatLockdown, time
-local UnitIsConnected, CanInspect, UnitName = UnitIsConnected, CanInspect, UnitName
+local UnitIsConnected, CanInspect, UnitName, IsInGroup = UnitIsConnected, CanInspect, UnitName, IsInGroup
 local WEAPON, ARMOR = WEAPON, ARMOR
 local LOOT_ITEM_PATTERN = gsub(LOOT_ITEM, '%%s', '(.+)')
 local LibItemLevel = LibStub("LibItemLevel")
@@ -13,16 +13,20 @@ local LibInspect = LibStub("LibInspect")
 local _, playerClass = UnitClass("player")
 
 --[[ 
-	TODO: 
+	IDEAS:
 		* OnItemRecieved remove item from list?
 		* ENCOUNTER_LOOT_RECEIVED
 			encounterID, itemID, itemLink, quantity, playerName, className
 			https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/FrameXML/LevelUpDisplay.lua#L1450-L1468
-		* 8.0 Look into Item class (ContinueOnItemLoad Usage: NonEmptyItem:ContinueOnLoad(callbackFunction))
+		* 8.0 Look into new Item class (ContinueOnItemLoad Usage: NonEmptyItem:ContinueOnLoad(callbackFunction))
 		* Test: DoesItemContainSpec(link, classID)
+		* Show new items in titlebar
+	TODO: 
 		* RaidMembers cleanup
 		* Config/Options frame
-		* 5-man group inspect
+		* Minimap button
+		* Confirm delete dialog
+		* Minimize button in titlebar
 --]]
 
 AddOn.MainFrame = CreateFrame("Frame", nil, UIParent);
@@ -32,7 +36,7 @@ AddOn.Entries = {}
 AddOn.RaidMembers = {}
 AddOn.inspectCount = 1
 AddOn.Config = {}
-AddOn.lootFrameOpen = false
+AddOn.InspectTimer = nil
 -- AddOn.entriesIndex = 1
 
 DoYouNeedThat = AddOn
@@ -58,7 +62,7 @@ function AddOn.Events:CHAT_MSG_LOOT(...)
 	-- If not Armor/Weapon or if its a Legendary return
 	if (type ~= ARMOR and type ~= WEAPON) or (rarity == 5) then return end
 	-- If not equippable by your class return
-	--if not AddOn:IsEquippableForClass(itemClass, itemSubClass, equipLoc) then return end
+	if not AddOn:IsEquippableForClass(itemClass, itemSubClass, equipLoc) then return end
 
 	local _, iLvl = LibItemLevel:GetItemInfo(item)
 
@@ -68,11 +72,8 @@ function AddOn.Events:CHAT_MSG_LOOT(...)
 		--AddOn.Print("Item is upgrade")
 		if not sfind(looter, '-') then
 			looter = AddOn.Utils.GetUnitNameWithRealm(looter)
-			AddOn.Debug(looter)
 		end
-		AddOn.Debug(looter)
 		local t = {item, looter, iLvl}
-		AddOn.Debug(t[1] .. " " .. t[2] .. " " .. t[3])
 		AddOn:AddItemToLootTable(t)
 	--end
 end
@@ -91,11 +92,14 @@ function AddOn.Events:PLAYER_ENTERING_WORLD()
 		AddOn.Debug("Not in instance, unregistering events")
 		AddOn.MainFrame:UnregisterEvent("CHAT_MSG_LOOT")
 		AddOn.MainFrame:UnregisterEvent("ENCOUNTER_END")
+		if AddOn.InspectTimer ~= nil then AddOn.InspectTimer:Cancel() end
 		return
 	end
 	AddOn.Debug("In instance, registering events")
 	AddOn.MainFrame:RegisterEvent("CHAT_MSG_LOOT")
 	AddOn.MainFrame:RegisterEvent("ENCOUNTER_END")
+	-- Set repeated timer to check for raidmembers inventory
+	AddOn.InspectTimer = C_Timer.NewTicker(7, function() AddOn.InspectGroup() end)
 end
 
 function AddOn.Events:ADDON_LOADED(addon)
@@ -105,10 +109,11 @@ function AddOn.Events:ADDON_LOADED(addon)
 	if DyntDB == nil then
 		DyntDB = {
 			lootWindow = {"CENTER", 0, 0},
+			lootWindowOpen = false,
 			config = {
 				whisperMessage = "Do you need [item]?",
 				openAfterEncounter = true,
-				debug = false
+				debug = false,
 			}
 		}
 	end
@@ -117,12 +122,12 @@ function AddOn.Events:ADDON_LOADED(addon)
 
 	-- Set window position
 	AddOn.lootFrame:SetPoint(AddOn.db.lootWindow[1], AddOn.db.lootWindow[2], AddOn.db.lootWindow[3])
+	-- Reopen window if left opened on uireload/exit
+	if AddOn.db.lootWindowOpen then AddOn.lootFrame:Show() end
+
 	-- Replace config with saved one
 	AddOn.Config = AddOn.db.config
 
-	-- TODO: Move this to PLAYER_ENTERING_WORLD, Only start it if you are in raid/dungeon, Cancel it if not
-	-- Set repeated timer to check for raidmembers inventory
-	local ticker = C_Timer.NewTicker(7, function() AddOn.InspectGroup() end)
 end
 
 function AddOn.GetEquippedIlvlBySlotID(slotID)
@@ -235,6 +240,7 @@ function AddOn.ShowItemTooltip(itemLink)
 	ShowUIPanel(GameTooltip)
 	GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
 	GameTooltip:SetHyperlink(itemLink)
+	--GameTooltip_ShowCompareItem();
 	GameTooltip:Show()
 end
 
@@ -315,24 +321,18 @@ local function SlashCommandHandler(msg)
 		local item = {args, player}
 		local _, iLvl = LibItemLevel:GetItemInfo(args)
 		item[3] = iLvl
-		--[[local guid = UnitGUID("player")
-		AddOn.RaidMembers[guid] = {
-			items = {
-				[11] = "\124cffff8000\124Hitem:132452::::::::110:::::\124h[Sephuz's Secret]\124h\124r"
-			}
-		}]]
 		LibInspect:RequestData("items", "player", false)
 		AddOn:AddItemToLootTable(item)
 	elseif cmd == "debug" then
 		AddOn.Config.debug = not AddOn.Config.debug
 		AddOn.Print("Debug mode " .. (AddOn.Config.debug and "enabled" or "disabled"))
 	else
-		if not AddOn.lootFrameOpen then
+		if not AddOn.db.lootWindowOpen then
 			AddOn.lootFrame:Show()
-			AddOn.lootFrameOpen = true
+			AddOn.db.lootWindowOpen = true
 		else
 			AddOn.lootFrame:Hide()
-			AddOn.lootFrameOpen = false
+			AddOn.db.lootWindowOpen = false
 		end		
 	end
 end
