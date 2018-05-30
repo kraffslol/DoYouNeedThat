@@ -1,6 +1,6 @@
 local AddonName, AddOn = ...
 
-local _G, pairs, print, gsub, sfind, tinsert = _G, pairs, print, string.gsub, string.find, table.insert
+local _G, print, gsub, sfind = _G, print, string.gsub, string.find
 local GetItemInfo, IsEquippableItem, GetInventoryItemLink, UnitClass, GetItemInfoInstant = GetItemInfo, IsEquippableItem, GetInventoryItemLink, UnitClass, GetItemInfoInstant
 local GameTooltip, SendChatMessage, UIParent, ShowUIPanel, select = GameTooltip, SendChatMessage, UIParent, ShowUIPanel, select
 local UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo = UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo
@@ -21,12 +21,12 @@ local _, playerClass = UnitClass("player")
 		* 8.0 Look into new Item class (ContinueOnItemLoad Usage: NonEmptyItem:ContinueOnLoad(callbackFunction))
 		* Test: DoesItemContainSpec(link, classID)
 		* Show new items in titlebar
+		* If new items and window open & minimized, then expand window
 	TODO: 
 		* RaidMembers cleanup
-		* Config/Options frame
+		* Config/Options frame https://wow.gamepedia.com/Using_the_Interface_Options_Addons_panel
 		* Minimap button
 		* Confirm delete dialog
-		* Minimize button in titlebar
 --]]
 
 AddOn.MainFrame = CreateFrame("Frame", nil, UIParent);
@@ -37,7 +37,6 @@ AddOn.RaidMembers = {}
 AddOn.inspectCount = 1
 AddOn.Config = {}
 AddOn.InspectTimer = nil
--- AddOn.entriesIndex = 1
 
 DoYouNeedThat = AddOn
 
@@ -315,7 +314,7 @@ AddOn.MainFrame:SetScript("OnEvent", function(self, event, ...) AddOn.Events[eve
 AddOn.MainFrame:RegisterEvent("ADDON_LOADED")
 AddOn.MainFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 
-local function SlashCommandHandler(msg)
+function AddOn.SlashCommandHandler(msg)
 	local _, _, cmd, args = sfind(msg, "%s?(%w+)%s?(.*)")
 	if cmd == "clear" then
 		AddOn:ClearEntries()
@@ -342,4 +341,8 @@ end
 
 SLASH_DYNT1 = "/dynt"
 SLASH_DYNT2 = "/doyouneedthat"
-SlashCmdList["DYNT"] = SlashCommandHandler
+SlashCmdList["DYNT"] = AddOn.SlashCommandHandler
+
+-- Bindings
+BINDING_HEADER_DOYOUNEEDTHAT = "DoYouNeedThat"
+BINDING_NAME_DYNT_TOGGLE = "Toggle Window"

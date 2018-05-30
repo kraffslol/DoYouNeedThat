@@ -172,7 +172,10 @@ AddOn.lootFrame.header.close = CreateFrame("Button", nil, AddOn.lootFrame.header
 AddOn.lootFrame.header.close:SetPoint("RIGHT", AddOn.lootFrame.header, "RIGHT", -4, 0)
 AddOn.lootFrame.header.close:SetText("x")
 skinButton(AddOn.lootFrame.header.close, true, "red")
-AddOn.lootFrame.header.close:SetScript("OnClick", function() AddOn.lootFrame:Hide() AddOn.lootFrameOpen = false end)
+AddOn.lootFrame.header.close:SetScript("OnClick", function() 
+	AddOn.lootFrame:Hide() 
+	AddOn.db.lootWindowOpen = false
+end)
 
 AddOn.lootFrame.header.text = AddOn.lootFrame.header:CreateFontString(nil, "OVERLAY", "dynt_large_text")
 AddOn.lootFrame.header.text:SetText("|cFFFF6B6BDoYouNeedThat")
