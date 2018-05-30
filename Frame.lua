@@ -67,6 +67,9 @@ local function skinButton(frame, small, color)
 	elseif (color == "dark") then
 		colors = {.1,.1,.1,1}
 		hovercolors = {.1,.1,.1,1}
+	elseif (color == "lightgrey") then
+		colors = {.219, .219, .219, 1}
+		hovercolors = {.270, .270, .270, 1}
 	end
 	frame:SetBackdrop({
 		bgFile = "Interface\\Buttons\\WHITE8x8",
@@ -146,6 +149,25 @@ AddOn.lootFrame.header:SetPoint("TOPLEFT", AddOn.lootFrame, "TOPLEFT")
 AddOn.lootFrame.header:SetPoint("BOTTOMRIGHT", AddOn.lootFrame, "TOPRIGHT", 0, -24)
 skinBackdrop(AddOn.lootFrame.header,.1,.1,.1,1)
 
+local minimized = false
+AddOn.lootFrame.header.minimize = CreateFrame("Button", nil, AddOn.lootFrame.header)
+AddOn.lootFrame.header.minimize:SetPoint("RIGHT", AddOn.lootFrame.header, "RIGHT", -30, 0)
+AddOn.lootFrame.header.minimize:SetText("-")
+skinButton(AddOn.lootFrame.header.minimize, true, "lightgrey")
+AddOn.lootFrame.header.minimize:SetScript("OnClick", function(self)
+	if minimized then
+		AddOn.lootFrame:SetSize(380, 200)
+		AddOn.lootFrame.table:Show()
+		self:SetText("-")
+		minimized = false
+	else
+		AddOn.lootFrame:SetSize(380, 24)
+		AddOn.lootFrame.table:Hide()
+		self:SetText("+")
+		minimized = true
+	end
+end)
+
 AddOn.lootFrame.header.close = CreateFrame("Button", nil, AddOn.lootFrame.header)
 AddOn.lootFrame.header.close:SetPoint("RIGHT", AddOn.lootFrame.header, "RIGHT", -4, 0)
 AddOn.lootFrame.header.close:SetText("x")
@@ -204,12 +226,6 @@ vote_table.equipped_text = vote_table:CreateFontString(nil, "OVERLAY", "dynt_but
 vote_table.equipped_text:SetText("Looter Eq")
 vote_table.equipped_text:SetTextColor(1, 1, 1)
 vote_table.equipped_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 175, 16)
-
---vote_table.whisper_text = vote_table:CreateFontString(nil, "OVERLAY", "dynt_button")
---vote_table.whisper_text:SetText("Whisper")
---vote_table.whisper_text:SetTextColor(1, 1, 1)
---vote_table.whisper_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 220, 16)
-
 
 -- Test entries
 local lastframe = nil
