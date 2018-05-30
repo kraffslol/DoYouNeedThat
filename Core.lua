@@ -6,7 +6,7 @@ local GameTooltip, SendChatMessage, UIParent, ShowUIPanel, select = GameTooltip,
 local UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo = UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo
 local C_Timer, GetPlayerInfoByGUID, InCombatLockdown, time = C_Timer, GetPlayerInfoByGUID, InCombatLockdown, time
 local UnitIsConnected, CanInspect, UnitName, IsInGroup = UnitIsConnected, CanInspect, UnitName, IsInGroup
-local WEAPON, ARMOR = WEAPON, ARMOR
+local WEAPON, ARMOR, RAID_CLASS_COLORS = WEAPON, ARMOR, RAID_CLASS_COLORS
 local LOOT_ITEM_PATTERN = gsub(LOOT_ITEM, '%%s', '(.+)')
 local LibItemLevel = LibStub("LibItemLevel")
 local LibInspect = LibStub("LibInspect")
@@ -106,6 +106,7 @@ function AddOn.Events:ADDON_LOADED(addon)
 	if not addon == AddonName then return end
 	AddOn.MainFrame:UnregisterEvent("ADDON_LOADED")
 
+	-- Set SavedVariables defaults
 	if DyntDB == nil then
 		DyntDB = {
 			lootWindow = {"CENTER", 0, 0},
@@ -205,6 +206,7 @@ function AddOn:AddItemToLootTable(t)
 	local entry = self:GetEntry(t[1], t[2])
 	local _, _, _, equipLoc, texture = GetItemInfoInstant(t[1])
 	local character = t[2]:match("(.*)%-") or t[2]
+	local classColor = RAID_CLASS_COLORS[select(2, UnitClass(character))]
 
 	entry.itemLink = t[1]
 	entry.looter = t[2]
@@ -227,6 +229,7 @@ function AddOn:AddItemToLootTable(t)
 	end
 
 	entry.name:SetText(character)
+	entry.name:SetTextColor(classColor.r, classColor.g, classColor.b)
 	AddOn.setItemTooltip(entry.item, t[1])
 	entry.ilvl:SetText(t[3])
 
