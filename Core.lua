@@ -1,12 +1,14 @@
 local AddonName, AddOn = ...
 
+-- Localize
 local _G, print, gsub, sfind = _G, print, string.gsub, string.find
-local GetItemInfo, IsEquippableItem, GetInventoryItemLink, UnitClass, GetItemInfoInstant = GetItemInfo, IsEquippableItem, GetInventoryItemLink, UnitClass, GetItemInfoInstant
+local GetItemInfo, IsEquippableItem, GetInventoryItemLink, UnitClass = GetItemInfo, IsEquippableItem, GetInventoryItemLink, UnitClass
 local GameTooltip, SendChatMessage, UIParent, ShowUIPanel, select = GameTooltip, SendChatMessage, UIParent, ShowUIPanel, select
 local UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo = UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo
 local C_Timer, GetPlayerInfoByGUID, InCombatLockdown, time = C_Timer, GetPlayerInfoByGUID, InCombatLockdown, time
-local UnitIsConnected, CanInspect, UnitName, IsInGroup = UnitIsConnected, CanInspect, UnitName, IsInGroup
+local UnitIsConnected, CanInspect, UnitName, IsInGroup, GetItemInfoInstant = UnitIsConnected, CanInspect, UnitName, IsInGroup, GetItemInfoInstant
 local WEAPON, ARMOR, RAID_CLASS_COLORS = WEAPON, ARMOR, RAID_CLASS_COLORS
+
 local LOOT_ITEM_PATTERN = gsub(LOOT_ITEM, '%%s', '(.+)')
 local LibItemLevel = LibStub("LibItemLevel")
 local LibInspect = LibStub("LibInspect")
@@ -22,6 +24,8 @@ local _, playerClass = UnitClass("player")
 		* Test: DoesItemContainSpec(link, classID)
 		* Show new items in titlebar
 		* If new items and window open & minimized, then expand window
+		* Random whisper messages
+		* Version checking
 	TODO: 
 		* RaidMembers cleanup
 		* Config/Options frame https://wow.gamepedia.com/Using_the_Interface_Options_Addons_panel
@@ -31,14 +35,13 @@ local _, playerClass = UnitClass("player")
 
 AddOn.MainFrame = CreateFrame("Frame", nil, UIParent);
 AddOn.db = {}
-AddOn.Events = {}
 AddOn.Entries = {}
 AddOn.RaidMembers = {}
 AddOn.inspectCount = 1
 AddOn.Config = {}
-AddOn.InspectTimer = nil
 
-DoYouNeedThat = AddOn
+-- Globalize
+_G["DoYouNeedThat"] = AddOn
 
 function AddOn.Print(msg)
 	print("[|cff3399FFDYNT|r] " .. msg)
@@ -48,8 +51,8 @@ function AddOn.Debug(msg)
 	if (AddOn.Config.debug) then AddOn.Print(msg) end
 end
 
--- Events: CHAT_MSG_LOOT, ENCOUNTER_END
-function AddOn.Events:CHAT_MSG_LOOT(...)
+-- Events: CHAT_MSG_LOOT, BOSS_KILL
+function AddOn:CHAT_MSG_LOOT(...)
 	local message, _, _, _, looter = ...
 	local _, item = message:match(LOOT_ITEM_PATTERN)
 
@@ -77,31 +80,32 @@ function AddOn.Events:CHAT_MSG_LOOT(...)
 	--end
 end
 
-function AddOn.Events:ENCOUNTER_END(...)
-	local _, _, _, _, success = ...
+function AddOn:BOSS_KILL()
 	local _, _, difficulty = GetInstanceInfo()
-	AddOn:ClearEntries()
-	if AddOn.Config.openAfterEncounter and success and difficulty ~= 8 then AddOn.lootFrame:Show() end
+	self:ClearEntries()
+	if self.Config.openAfterEncounter and difficulty ~= 8 then self.lootFrame:Show() end
 end
 
-function AddOn.Events:PLAYER_ENTERING_WORLD()
-	--AddOn.MainFrame:RegisterEvent("CHAT_MSG_LOOT")
+function AddOn:PLAYER_ENTERING_WORLD()
 	local _, instanceType = GetInstanceInfo()
 	if instanceType == "none" then
 		AddOn.Debug("Not in instance, unregistering events")
 		AddOn.MainFrame:UnregisterEvent("CHAT_MSG_LOOT")
-		AddOn.MainFrame:UnregisterEvent("ENCOUNTER_END")
-		if AddOn.InspectTimer ~= nil then AddOn.InspectTimer:Cancel() end
+		AddOn.MainFrame:UnregisterEvent("BOSS_KILL")
+		if AddOn.InspectTimer then 
+			AddOn.InspectTimer:Cancel()
+			AddOn.InspectTimer = nil
+		end
 		return
 	end
 	AddOn.Debug("In instance, registering events")
 	AddOn.MainFrame:RegisterEvent("CHAT_MSG_LOOT")
-	AddOn.MainFrame:RegisterEvent("ENCOUNTER_END")
+	AddOn.MainFrame:RegisterEvent("BOSS_KILL")
 	-- Set repeated timer to check for raidmembers inventory
 	AddOn.InspectTimer = C_Timer.NewTicker(7, function() AddOn.InspectGroup() end)
 end
 
-function AddOn.Events:ADDON_LOADED(addon)
+function AddOn:ADDON_LOADED(addon)
 	if not addon == AddonName then return end
 	AddOn.MainFrame:UnregisterEvent("ADDON_LOADED")
 
@@ -212,7 +216,7 @@ function AddOn:AddItemToLootTable(t)
 	entry.guid = UnitGUID(character)
 	
 	-- If looter has been inspected, show their equipped items in those slots
-	if AddOn.RaidMembers[entry.guid] ~= nil then
+	if AddOn.RaidMembers[entry.guid] then
 		local raidMember = AddOn.RaidMembers[entry.guid]
 		local item, item2 = nil, nil
 		if equipLoc == "INVTYPE_FINGER" then 
@@ -309,7 +313,9 @@ LibInspect:AddHook(AddonName, "items", function(guid, data, age)
 end)
 
 -- Event handler
-AddOn.MainFrame:SetScript("OnEvent", function(self, event, ...) AddOn.Events[event](self, ...) end)
+AddOn.MainFrame:SetScript("OnEvent", function(self, event, ...) 
+	if AddOn[event] then AddOn[event](AddOn, ...) end
+end)
 
 AddOn.MainFrame:RegisterEvent("ADDON_LOADED")
 AddOn.MainFrame:RegisterEvent("PLAYER_ENTERING_WORLD")

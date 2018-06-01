@@ -2,7 +2,7 @@
 
 ## Title: DoYouNeedThat?
 ## Author: Kraffs
-## Version: 0.0.1
+## Version: 0.1
 ## Notes: Pesters people for loot because Personal Loot is fun!
 ## SavedVariables: DyntDB
 
