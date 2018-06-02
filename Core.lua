@@ -8,6 +8,7 @@ local UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo = UnitGUID, IsInRa
 local C_Timer, GetPlayerInfoByGUID, InCombatLockdown, time = C_Timer, GetPlayerInfoByGUID, InCombatLockdown, time
 local UnitIsConnected, CanInspect, UnitName, IsInGroup, GetItemInfoInstant = UnitIsConnected, CanInspect, UnitName, IsInGroup, GetItemInfoInstant
 local WEAPON, ARMOR, RAID_CLASS_COLORS = WEAPON, ARMOR, RAID_CLASS_COLORS
+local CreateFrame = CreateFrame
 
 local LOOT_ITEM_PATTERN = gsub(LOOT_ITEM, '%%s', '(.+)')
 local LibItemLevel = LibStub("LibItemLevel")
@@ -28,17 +29,16 @@ local _, playerClass = UnitClass("player")
 		* Version checking
 	TODO: 
 		* RaidMembers cleanup
-		* Config/Options frame https://wow.gamepedia.com/Using_the_Interface_Options_Addons_panel
 		* Minimap button
 		* Confirm delete dialog
 --]]
 
-AddOn.MainFrame = CreateFrame("Frame", nil, UIParent);
+AddOn.EventFrame = CreateFrame("Frame", nil, UIParent);
 AddOn.db = {}
 AddOn.Entries = {}
 AddOn.RaidMembers = {}
-AddOn.inspectCount = 1
 AddOn.Config = {}
+AddOn.inspectCount = 1
 
 -- Globalize
 _G["DoYouNeedThat"] = AddOn
@@ -64,19 +64,19 @@ function AddOn:CHAT_MSG_LOOT(...)
 	-- If not Armor/Weapon or if its a Legendary return
 	if (type ~= ARMOR and type ~= WEAPON) or (rarity == 5) then return end
 	-- If not equippable by your class return
-	if not AddOn:IsEquippableForClass(itemClass, itemSubClass, equipLoc) then return end
+	if not self:IsEquippableForClass(itemClass, itemSubClass, equipLoc) then return end
 
 	local _, iLvl = LibItemLevel:GetItemInfo(item)
 
-	AddOn.Debug(item .. " " .. iLvl)
+	self.Debug(item .. " " .. iLvl)
 
-	--if AddOn.IsItemUpgrade(iLvl, equipLoc) then
-		--AddOn.Print("Item is upgrade")
+	--if self.IsItemUpgrade(iLvl, equipLoc) then
+		--self.Print("Item is upgrade")
 		if not sfind(looter, '-') then
-			looter = AddOn.Utils.GetUnitNameWithRealm(looter)
+			looter = self.Utils.GetUnitNameWithRealm(looter)
 		end
 		local t = {item, looter, iLvl}
-		AddOn:AddItemToLootTable(t)
+		self:AddItemToLootTable(t)
 	--end
 end
 
@@ -89,25 +89,25 @@ end
 function AddOn:PLAYER_ENTERING_WORLD()
 	local _, instanceType = GetInstanceInfo()
 	if instanceType == "none" then
-		AddOn.Debug("Not in instance, unregistering events")
-		AddOn.MainFrame:UnregisterEvent("CHAT_MSG_LOOT")
-		AddOn.MainFrame:UnregisterEvent("BOSS_KILL")
-		if AddOn.InspectTimer then 
-			AddOn.InspectTimer:Cancel()
-			AddOn.InspectTimer = nil
+		self.Debug("Not in instance, unregistering events")
+		self.EventFrame:UnregisterEvent("CHAT_MSG_LOOT")
+		self.EventFrame:UnregisterEvent("BOSS_KILL")
+		if self.InspectTimer then
+			self.InspectTimer:Cancel()
+			self.InspectTimer = nil
 		end
 		return
 	end
-	AddOn.Debug("In instance, registering events")
-	AddOn.MainFrame:RegisterEvent("CHAT_MSG_LOOT")
-	AddOn.MainFrame:RegisterEvent("BOSS_KILL")
+	self.Debug("In instance, registering events")
+	self.EventFrame:RegisterEvent("CHAT_MSG_LOOT")
+	self.EventFrame:RegisterEvent("BOSS_KILL")
 	-- Set repeated timer to check for raidmembers inventory
-	AddOn.InspectTimer = C_Timer.NewTicker(7, function() AddOn.InspectGroup() end)
+	self.InspectTimer = C_Timer.NewTicker(7, function() self.InspectGroup() end)
 end
 
 function AddOn:ADDON_LOADED(addon)
 	if not addon == AddonName then return end
-	AddOn.MainFrame:UnregisterEvent("ADDON_LOADED")
+	self.EventFrame:UnregisterEvent("ADDON_LOADED")
 
 	-- Set SavedVariables defaults
 	if DyntDB == nil then
@@ -122,16 +122,17 @@ function AddOn:ADDON_LOADED(addon)
 		}
 	end
 
-	AddOn.db = DyntDB
+	self.db = DyntDB
 
 	-- Set window position
-	AddOn.lootFrame:SetPoint(AddOn.db.lootWindow[1], AddOn.db.lootWindow[2], AddOn.db.lootWindow[3])
+	self.lootFrame:SetPoint(self.db.lootWindow[1], self.db.lootWindow[2], self.db.lootWindow[3])
 	-- Reopen window if left opened on uireload/exit
-	if AddOn.db.lootWindowOpen then AddOn.lootFrame:Show() end
+	if self.db.lootWindowOpen then self.lootFrame:Show() end
 
 	-- Replace config with saved one
-	AddOn.Config = AddOn.db.config
+	self.Config = self.db.config
 
+    self.createOptionsFrame()
 end
 
 function AddOn.GetEquippedIlvlBySlotID(slotID)
@@ -189,7 +190,6 @@ function AddOn:ClearEntries()
 end
 
 function AddOn:GetEntry(itemLink, looter)
-	local entry = nil
 	for i = 1, #self.Entries do
 		-- If it already exists
 		if self.Entries[i].itemLink == itemLink and self.Entries[i].looter == looter then
@@ -205,7 +205,7 @@ end
 
 function AddOn:AddItemToLootTable(t)
 	-- Itemlink, Looter, Ilvl
-	AddOn.Debug("Adding item to entries")
+	self.Debug("Adding item to entries")
 	local entry = self:GetEntry(t[1], t[2])
 	local _, _, _, equipLoc, texture = GetItemInfoInstant(t[1])
 	local character = t[2]:match("(.*)%-") or t[2]
@@ -216,24 +216,24 @@ function AddOn:AddItemToLootTable(t)
 	entry.guid = UnitGUID(character)
 	
 	-- If looter has been inspected, show their equipped items in those slots
-	if AddOn.RaidMembers[entry.guid] then
-		local raidMember = AddOn.RaidMembers[entry.guid]
+	if self.RaidMembers[entry.guid] then
+		local raidMember = self.RaidMembers[entry.guid]
 		local item, item2 = nil, nil
 		if equipLoc == "INVTYPE_FINGER" then 
 			item, item2 = raidMember.items[11], raidMember.items[12]
 		elseif equipLoc == "INVTYPE_TRINKET" then
 			item, item2 = raidMember.items[13], raidMember.items[14]
 		else
-			local slotId = AddOn.Utils.GetSlotID(equipLoc)
+			local slotId = self.Utils.GetSlotID(equipLoc)
 			item = raidMember.items[slotId]
 		end
-		AddOn.setItemTooltip(entry.looterEq1, item)
-		if item2 ~= nil then AddOn.setItemTooltip(entry.looterEq2, item2) end
+		self.setItemTooltip(entry.looterEq1, item)
+		if item2 ~= nil then self.setItemTooltip(entry.looterEq2, item2) end
 	end
 
 	entry.name:SetText(character)
 	entry.name:SetTextColor(classColor.r, classColor.g, classColor.b)
-	AddOn.setItemTooltip(entry.item, t[1])
+	self.setItemTooltip(entry.item, t[1])
 	entry.ilvl:SetText(t[3])
 
 	self:repositionFrames()
@@ -254,11 +254,9 @@ function AddOn.HideItemTooltip()
 	GameTooltip:Hide()
 end
 
-function AddOn.SendWhisper(itemLink, looter)
+function AddOn:SendWhisper(itemLink, looter)
 	-- Replace [item] with itemLink if supplied
-	local message = AddOn.Config.whisperMessage:gsub("%[item%]", itemLink)
-
-	AddOn.Debug(looter .. " " .. message)
+	local message = self.Config.whisperMessage:gsub("%[item%]", itemLink)
 	SendChatMessage(message, "WHISPER", nil, looter)
 end
 
@@ -313,12 +311,12 @@ LibInspect:AddHook(AddonName, "items", function(guid, data, age)
 end)
 
 -- Event handler
-AddOn.MainFrame:SetScript("OnEvent", function(self, event, ...) 
+AddOn.EventFrame:SetScript("OnEvent", function(self, event, ...) 
 	if AddOn[event] then AddOn[event](AddOn, ...) end
 end)
 
-AddOn.MainFrame:RegisterEvent("ADDON_LOADED")
-AddOn.MainFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+AddOn.EventFrame:RegisterEvent("ADDON_LOADED")
+AddOn.EventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 
 function AddOn.SlashCommandHandler(msg)
 	local _, _, cmd, args = sfind(msg, "%s?(%w+)%s?(.*)")

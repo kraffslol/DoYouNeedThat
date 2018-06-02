@@ -12,20 +12,6 @@ local LE_ITEM_WEAPON_STAFF, LE_ITEM_WEAPON_UNARMED, LE_ITEM_WEAPON_DAGGER = LE_I
 local LE_ITEM_WEAPON_BOWS, LE_ITEM_WEAPON_CROSSBOW, LE_ITEM_WEAPON_GUNS = LE_ITEM_WEAPON_BOWS, LE_ITEM_WEAPON_CROSSBOW, LE_ITEM_WEAPON_GUNS
 local LE_ITEM_WEAPON_WAND, LE_ITEM_ARMOR_SHIELD, LE_ITEM_WEAPON_AXE2H = LE_ITEM_WEAPON_WAND, LE_ITEM_ARMOR_SHIELD, LE_ITEM_WEAPON_AXE2H
 
--- Class identifiers
-local DEATH_KNIGHT = select(2, GetClassInfo(6))
-local DEMON_HUNTER = select(2, GetClassInfo(12))
-local DRUID = select(2, GetClassInfo(11))
-local HUNTER = select(2, GetClassInfo(3))
-local MAGE = select(2, GetClassInfo(8))
-local MONK = select(2, GetClassInfo(10))
-local PALADIN = select(2, GetClassInfo(2))
-local PRIEST = select(2, GetClassInfo(5))
-local ROGUE = select(2, GetClassInfo(4))
-local SHAMAN = select(2, GetClassInfo(7))
-local WARLOCK = select(2, GetClassInfo(9))
-local WARRIOR = select(2, GetClassInfo(1))
-
 DoYouNeedThat.Utils = Utils
 
 function Utils.GetUnitNameWithRealm(unit)
@@ -72,7 +58,7 @@ function Utils.GetSlotID(itemEquipLoc)
 end
 
 Utils.ValidGear = {
-	[DEATH_KNIGHT] = {
+	["DEATHKNIGHT"] = {
 		[LE_ITEM_CLASS_ARMOR] = {
 			LE_ITEM_ARMOR_PLATE,
 			LE_ITEM_ARMOR_GENERIC
@@ -87,7 +73,7 @@ Utils.ValidGear = {
 			LE_ITEM_WEAPON_SWORD2H
 		}
 	},
-	[DEMON_HUNTER] = {
+	["DEMONHUNTER"] = {
 		[LE_ITEM_CLASS_ARMOR] = {
 			LE_ITEM_ARMOR_LEATHER,
 			LE_ITEM_ARMOR_GENERIC
@@ -101,7 +87,7 @@ Utils.ValidGear = {
 			LE_ITEM_WEAPON_WARGLAIVE
 		}
 	},
-	[DRUID] = {
+	["DRUID"] = {
 		[LE_ITEM_CLASS_ARMOR] = {
 			LE_ITEM_ARMOR_LEATHER,
 			LE_ITEM_ARMOR_GENERIC
@@ -115,7 +101,7 @@ Utils.ValidGear = {
 			LE_ITEM_WEAPON_MACE2H
 		}
 	},
-	[HUNTER] = {
+	["HUNTER"] = {
 		[LE_ITEM_CLASS_ARMOR] = {
 			LE_ITEM_ARMOR_MAIL,
 			LE_ITEM_ARMOR_GENERIC
@@ -134,7 +120,7 @@ Utils.ValidGear = {
 			LE_ITEM_WEAPON_GUNS
 		}
 	},
-	[MAGE] = {
+	["MAGE"] = {
 		[LE_ITEM_CLASS_ARMOR] = {
 			LE_ITEM_ARMOR_CLOTH,
 			LE_ITEM_ARMOR_GENERIC
@@ -146,7 +132,7 @@ Utils.ValidGear = {
 			LE_ITEM_WEAPON_WAND
 		}
 	},
-	[MONK] = {
+	["MONK"] = {
 		[LE_ITEM_CLASS_ARMOR] = {
 			LE_ITEM_ARMOR_LEATHER,
 			LE_ITEM_ARMOR_GENERIC
@@ -160,7 +146,7 @@ Utils.ValidGear = {
 			LE_ITEM_WEAPON_SWORD1H
 		}
 	},
-	[PALADIN] = {
+	["PALADIN"] = {
 		[LE_ITEM_CLASS_ARMOR] = {
 			LE_ITEM_ARMOR_PLATE,
 			LE_ITEM_ARMOR_GENERIC,
@@ -176,7 +162,7 @@ Utils.ValidGear = {
 			LE_ITEM_WEAPON_SWORD2H
 		}
 	},
-	[PRIEST] = {
+	["PRIEST"] = {
 		[LE_ITEM_CLASS_ARMOR] = {
 			LE_ITEM_ARMOR_CLOTH,
 			LE_ITEM_ARMOR_GENERIC
@@ -188,7 +174,7 @@ Utils.ValidGear = {
 			LE_ITEM_WEAPON_WAND
 		}
 	},
-	[ROGUE] = {
+	["ROGUE"] = {
 		[LE_ITEM_CLASS_ARMOR] = {
 			LE_ITEM_ARMOR_LEATHER,
 			LE_ITEM_ARMOR_GENERIC
@@ -204,7 +190,7 @@ Utils.ValidGear = {
 			LE_ITEM_WEAPON_GUNS
 		}
 	},
-	[SHAMAN] = {
+	["SHAMAN"] = {
 		[LE_ITEM_CLASS_ARMOR] = {
 			LE_ITEM_ARMOR_MAIL,
 			LE_ITEM_ARMOR_GENERIC,
@@ -220,7 +206,7 @@ Utils.ValidGear = {
 			LE_ITEM_WEAPON_MACE2H
 		}
 	},
-	[WARLOCK] = {
+	["WARLOCK"] = {
 		[LE_ITEM_CLASS_ARMOR] = {
 			LE_ITEM_ARMOR_CLOTH,
 			LE_ITEM_ARMOR_GENERIC
@@ -232,7 +218,7 @@ Utils.ValidGear = {
 			LE_ITEM_WEAPON_WAND
 		}
 	},
-	[WARRIOR] = {
+	["WARRIOR"] = {
 		[LE_ITEM_CLASS_ARMOR] = {
 			LE_ITEM_ARMOR_PLATE,
 			LE_ITEM_ARMOR_GENERIC,

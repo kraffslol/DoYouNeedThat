@@ -1,7 +1,7 @@
 local AddonName, AddOn = ...
 local CreateFrame, unpack, GetItemInfo, select, GetItemInfoInstant = CreateFrame, unpack, GetItemInfo, select, GetItemInfoInstant
 local ITEM_QUALITY_COLORS, CreateFont, UIParent = ITEM_QUALITY_COLORS, CreateFont, UIParent
-local tsort, tonumber = table.sort, tonumber
+local tsort, tonumber, xpcall, tostring, geterrorhandler = table.sort, tonumber, xpcall, tostring, geterrorhandler
 
 function AddOn:repositionFrames()
 	local lastentry = nil
@@ -123,6 +123,7 @@ normal_font:SetShadowOffset(1, -1)
 normal_font:SetJustifyH("CENTER")
 
 -- Window
+---@type Frame
 AddOn.lootFrame = CreateFrame('frame', 'DYNT', UIParent)
 skinBackdrop(AddOn.lootFrame, .1,.1,.1,.8);
 AddOn.lootFrame:EnableMouse(true)
@@ -136,6 +137,7 @@ AddOn.lootFrame:SetPoint("CENTER")
 AddOn.lootFrame:Hide()
 
 -- Header
+---@type Frame
 AddOn.lootFrame.header = CreateFrame('frame', nil, AddOn.lootFrame)
 AddOn.lootFrame.header:EnableMouse(true)
 AddOn.lootFrame.header:RegisterForDrag('LeftButton','RightButton')
@@ -150,6 +152,7 @@ AddOn.lootFrame.header:SetPoint("BOTTOMRIGHT", AddOn.lootFrame, "TOPRIGHT", 0, -
 skinBackdrop(AddOn.lootFrame.header,.1,.1,.1,1)
 
 local minimized = false
+---@type Button
 AddOn.lootFrame.header.minimize = CreateFrame("Button", nil, AddOn.lootFrame.header)
 AddOn.lootFrame.header.minimize:SetPoint("RIGHT", AddOn.lootFrame.header, "RIGHT", -30, 0)
 AddOn.lootFrame.header.minimize:SetText("-")
@@ -168,6 +171,7 @@ AddOn.lootFrame.header.minimize:SetScript("OnClick", function(self)
 	end
 end)
 
+---@type Button
 AddOn.lootFrame.header.close = CreateFrame("Button", nil, AddOn.lootFrame.header)
 AddOn.lootFrame.header.close:SetPoint("RIGHT", AddOn.lootFrame.header, "RIGHT", -4, 0)
 AddOn.lootFrame.header.close:SetText("x")
@@ -182,17 +186,20 @@ AddOn.lootFrame.header.text:SetText("|cFFFF6B6BDoYouNeedThat")
 AddOn.lootFrame.header.text:SetPoint("CENTER", AddOn.lootFrame.header, "CENTER")
 
 -- Vote table
+---@type Frame
 local vote_table = CreateFrame("Frame", nil, AddOn.lootFrame)
 vote_table:SetPoint("TOPLEFT", AddOn.lootFrame, "TOPLEFT", 10, -50)
 vote_table:SetPoint("BOTTOMRIGHT", AddOn.lootFrame, "BOTTOMRIGHT", -30, 10)
 skinBackdrop(vote_table, .1,.1,.1,.8)
 AddOn.lootFrame.table = vote_table
 
+---@type ScrollFrame
 local scrollframe = CreateFrame("ScrollFrame", nil, vote_table)
 scrollframe:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 0, -2)
 scrollframe:SetPoint("BOTTOMRIGHT", vote_table, "BOTTOMRIGHT", 0, 2)
 vote_table.scrollframe = scrollframe
 
+---@type Slider
 local scrollbar = CreateFrame("Slider", nil, scrollframe, "UIPanelScrollBarTemplate")
 scrollbar:SetPoint("TOPLEFT", vote_table, "TOPRIGHT", 6, -16) 
 scrollbar:SetPoint("BOTTOMLEFT", vote_table, "BOTTOMRIGHT", 0, 16)
@@ -205,6 +212,7 @@ scrollbar:SetScript("OnValueChanged", function (self, value) self:GetParent():Se
 skinBackdrop(scrollbar, .1,.1,.1,.8)
 vote_table.scrollbar = scrollbar
 
+---@type Frame
 vote_table.content = CreateFrame("Frame", nil, scrollframe)
 vote_table.content:SetSize(340, 140)
 scrollframe:SetScrollChild(vote_table.content)
@@ -233,6 +241,7 @@ vote_table.equipped_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 175, 16)
 -- Test entries
 local lastframe = nil
 for i = 1, 20 do
+	---@type Button
 	local entry = CreateFrame("Button", nil, vote_table.content)
 	entry:SetSize(vote_table.content:GetWidth(), 24)
 	if (lastframe) then
@@ -243,6 +252,7 @@ for i = 1, 20 do
 	skinBackdrop(entry, 1,1,1,.1)
 	entry:Hide()
 
+	---@type Frame
 	entry.item = CreateFrame("frame", nil, entry)
 	entry.item:SetSize(20,20)
 	--entry.item:Hide();
@@ -266,6 +276,7 @@ for i = 1, 20 do
 	entry.name:SetTextColor(1, 1, 1)
 	entry.name:SetPoint("LEFT", entry, "LEFT", 90, 0)
 
+	---@type Frame
 	entry.looterEq1 = CreateFrame("frame", nil, entry)
 	entry.looterEq1:SetSize(20,20)
 	--entry.looterEq1:Hide()
@@ -279,6 +290,7 @@ for i = 1, 20 do
 	entry.looterEq1.tex:SetPoint("TOPLEFT", entry.looterEq1, "TOPLEFT", 2, -2)
 	entry.looterEq1.tex:SetPoint("BOTTOMRIGHT", entry.looterEq1, "BOTTOMRIGHT", -2, 2)
 
+	---@type Frame
 	entry.looterEq2 = CreateFrame("frame", nil, entry)
 	entry.looterEq2:SetSize(20,20)
 	entry.looterEq2:Hide()
@@ -292,17 +304,19 @@ for i = 1, 20 do
 	entry.looterEq2.tex:SetPoint("TOPLEFT", entry.looterEq2, "TOPLEFT", 2, -2)
 	entry.looterEq2.tex:SetPoint("BOTTOMRIGHT", entry.looterEq2, "BOTTOMRIGHT", -2, 2)
 
+	---@type Button
 	entry.whisper = CreateFrame("Button", nil, entry)
 	entry.whisper:SetSize(45,20)
 	entry.whisper:SetPoint("RIGHT", entry, "RIGHT", -30, 0)
 	entry.whisper:SetText("Whisper")
 	skinButton(entry.whisper, true, "blue")
 	entry.whisper:SetScript("OnClick", function() 
-		AddOn.SendWhisper(entry.itemLink, entry.looter)
+		AddOn:SendWhisper(entry.itemLink, entry.looter)
 		entry.whisper:Hide()
 	end)
 	entry.whisper:Hide()
 
+	---@type Button
 	entry.delete = CreateFrame("Button", nil, entry)
 	entry.delete:SetSize(25, 20)
 	entry.delete:SetPoint("RIGHT", entry, "RIGHT", -7, 0)
@@ -318,4 +332,73 @@ for i = 1, 20 do
 
 	lastframe = entry
 	AddOn.Entries[i] = entry
+end
+
+--- Options GUI
+function AddOn.createOptionsFrame()
+    local options = CreateFrame("Frame")
+    options.name = "DoYouNeedThat"
+
+    -- Debug toggle
+    ---@type CheckButton
+    options.debug = CreateFrame("CheckButton", "DYNT_Options_Debug", options, "ChatConfigCheckButtonTemplate")
+    options.debug:SetPoint("TOPLEFT", options, "TOPLEFT", 12, -20)
+    DYNT_Options_DebugText:SetText("Debug")
+    if AddOn.Config.debug then options.debug:SetChecked(true) end
+
+    -- Open after boss kill toggle
+    ---@type CheckButton
+    options.openAfterEncounter = CreateFrame("CheckButton", "DYNT_Options_OpenAfterEncounter", options, "ChatConfigCheckButtonTemplate")
+    options.openAfterEncounter:SetPoint("TOPLEFT", options, "TOPLEFT", 12, -40)
+    DYNT_Options_OpenAfterEncounterText:SetText("Open loot window after encounter")
+    if AddOn.Config.openAfterEncounter then options.openAfterEncounter:SetChecked(true) end
+
+    -- Whisper message
+    --@type EditBox
+    options.whisperMessage = CreateFrame("EditBox", "DYNT_Options_WhisperMessage", options, "InputBoxTemplate")
+    options.whisperMessage:SetSize(200, 32)
+    options.whisperMessage:SetPoint("TOPLEFT", options, "TOPLEFT", 22, -80)
+    options.whisperMessage:SetAutoFocus(false)
+    options.whisperMessage:SetMaxLetters(128)
+    AddOn.Debug(AddOn.Config.whisperMessage)
+    if AddOn.Config.whisperMessage then options.whisperMessage:SetText(AddOn.Config.whisperMessage) end
+    options.whisperMessage:SetCursorPosition(0)
+    options.whisperMessage:SetScript("OnEditFocusGained", function() --[[ Override to not highlight the text ]] end)
+    options.whisperMessage:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus()
+    end)
+
+    local whisperLabel = options.whisperMessage:CreateFontString(nil, "BACKGROUND", "GameFontNormal")
+    whisperLabel:SetPoint("BOTTOMLEFT", options.whisperMessage, "TOPLEFT", 0, 0)
+    --whisperLabel:SetPoint("BOTTOMRIGHT", options.whisperMessage, "TOPRIGHT", -6, 0)
+    whisperLabel:SetJustifyH("LEFT")
+    options.whisperMessage.labelText = whisperLabel
+    options.whisperMessage.labelText:SetTextColor(1, 1, 1)
+    options.whisperMessage.labelText:SetShadowColor(0, 0, 0)
+    options.whisperMessage.labelText:SetShadowOffset(1, -1)
+    options.whisperMessage.labelText:SetText("Whisper message (Use [item] shortcut if you want to link the item.)")
+
+
+    -- Set the field values to their value in SavedVariables.
+    function options.refreshFields()
+        options.debug:SetChecked(AddOn.Config.debug)
+        options.openAfterEncounter:SetChecked(AddOn.Config.openAfterEncounter)
+        options.whisperMessage:SetText(AddOn.Config.whisperMessage)
+        options.whisperMessage:SetCursorPosition(0)
+    end
+
+    function options.okay()
+        xpcall(function()
+            AddOn.db.config.debug = options.debug:GetChecked()
+            AddOn.db.config.openAfterEncounter = options.openAfterEncounter:GetChecked()
+            AddOn.db.config.whisperMessage = options.whisperMessage:GetText()
+        end, geterrorhandler())
+    end
+
+    function options.cancel()
+        -- Return the fields to a clean slate
+        options.refreshFields()
+    end
+
+    InterfaceOptions_AddCategory(options)
 end
