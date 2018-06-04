@@ -2,11 +2,13 @@ local AddonName, AddOn = ...
 
 -- Localize
 local _G, print, gsub, sfind = _G, print, string.gsub, string.find
-local GetItemInfo, IsEquippableItem, GetInventoryItemLink, UnitClass = GetItemInfo, IsEquippableItem, GetInventoryItemLink, UnitClass
-local GameTooltip, SendChatMessage, UIParent, ShowUIPanel, select = GameTooltip, SendChatMessage, UIParent, ShowUIPanel, select
+local GetItemInfo, IsEquippableItem = GetItemInfo, IsEquippableItem
+local GetInventoryItemLink, UnitClass = GetInventoryItemLink, UnitClass
+local GameTooltip, SendChatMessage, UIParent, ShowUIPanel = GameTooltip, SendChatMessage, UIParent, ShowUIPanel
+local select, IsInGroup, GetItemInfoInstant = select, IsInGroup, GetItemInfoInstant
 local UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo = UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo
 local C_Timer, GetPlayerInfoByGUID, InCombatLockdown, time = C_Timer, GetPlayerInfoByGUID, InCombatLockdown, time
-local UnitIsConnected, CanInspect, UnitName, IsInGroup, GetItemInfoInstant = UnitIsConnected, CanInspect, UnitName, IsInGroup, GetItemInfoInstant
+local UnitIsConnected, CanInspect, UnitName = UnitIsConnected, CanInspect, UnitName
 local WEAPON, ARMOR, RAID_CLASS_COLORS = WEAPON, ARMOR, RAID_CLASS_COLORS
 local CreateFrame = CreateFrame
 
@@ -15,7 +17,7 @@ local LibItemLevel = LibStub("LibItemLevel")
 local LibInspect = LibStub("LibInspect")
 local _, playerClass = UnitClass("player")
 
---[[ 
+--[[
 	IDEAS:
 		* OnItemRecieved remove item from list?
 		* ENCOUNTER_LOOT_RECEIVED
@@ -23,11 +25,10 @@ local _, playerClass = UnitClass("player")
 			https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/FrameXML/LevelUpDisplay.lua#L1450-L1468
 		* 8.0 Look into new Item class (ContinueOnItemLoad Usage: NonEmptyItem:ContinueOnLoad(callbackFunction))
 		* Test: DoesItemContainSpec(link, classID)
-		* Show new items in titlebar
 		* If new items and window open & minimized, then expand window
 		* Random whisper messages
 		* Version checking
-	TODO: 
+	TODO:
 		* RaidMembers cleanup
 		* Minimap button
 		* Confirm delete dialog
@@ -48,7 +49,7 @@ function AddOn.Print(msg)
 end
 
 function AddOn.Debug(msg)
-	if (AddOn.Config.debug) then AddOn.Print(msg) end
+	if AddOn.Config.debug then AddOn.Print(msg) end
 end
 
 -- Events: CHAT_MSG_LOOT, BOSS_KILL
@@ -168,7 +169,6 @@ end
 function AddOn:IsEquippableForClass(itemClass, itemSubClass, equipLoc)
 	-- Can be equipped by all, return true without checking
 	if equipLoc == 'INVTYPE_CLOAK' or equipLoc == 'INVTYPE_FINGER' or equipLoc == 'INVTYPE_TRINKET' then return true end
-	
 	local classGear = self.Utils.ValidGear[playerClass]
 	-- Loop through equippable item classes, if a match is found return true
 	for i=1, #classGear[itemClass] do
@@ -207,19 +207,19 @@ function AddOn:AddItemToLootTable(t)
 	-- Itemlink, Looter, Ilvl
 	self.Debug("Adding item to entries")
 	local entry = self:GetEntry(t[1], t[2])
-	local _, _, _, equipLoc, texture = GetItemInfoInstant(t[1])
+	local _, _, _, equipLoc = GetItemInfoInstant(t[1])
 	local character = t[2]:match("(.*)%-") or t[2]
 	local classColor = RAID_CLASS_COLORS[select(2, UnitClass(character))]
 
 	entry.itemLink = t[1]
 	entry.looter = t[2]
 	entry.guid = UnitGUID(character)
-	
+
 	-- If looter has been inspected, show their equipped items in those slots
 	if self.RaidMembers[entry.guid] then
 		local raidMember = self.RaidMembers[entry.guid]
 		local item, item2 = nil, nil
-		if equipLoc == "INVTYPE_FINGER" then 
+		if equipLoc == "INVTYPE_FINGER" then
 			item, item2 = raidMember.items[11], raidMember.items[12]
 		elseif equipLoc == "INVTYPE_TRINKET" then
 			item, item2 = raidMember.items[13], raidMember.items[14]
@@ -266,7 +266,7 @@ function AddOn.InspectPlayer(unit)
 	end
 
 	local canInspect, unitFound = LibInspect:RequestData("items", unit, false)
-	if not canInspect or not unitFound then 
+	if not canInspect or not unitFound then
 		return false
 	end
 	return true
@@ -299,10 +299,8 @@ function AddOn.InspectGroup()
 end
 
 LibInspect:SetMaxAge(599)
-LibInspect:AddHook(AddonName, "items", function(guid, data, age)
+LibInspect:AddHook(AddonName, "items", function(guid, data)
 	if data then
-		local _, _, _, _, _, name, realm = GetPlayerInfoByGUID(guid)
-		--AddOn.Debug(name .. "-" .. realm)
 		AddOn.RaidMembers[guid] = {
 			items = data.items,
 			maxAge = time() + 600
@@ -311,7 +309,7 @@ LibInspect:AddHook(AddonName, "items", function(guid, data, age)
 end)
 
 -- Event handler
-AddOn.EventFrame:SetScript("OnEvent", function(self, event, ...) 
+AddOn.EventFrame:SetScript("OnEvent", function(self, event, ...)
 	if AddOn[event] then AddOn[event](AddOn, ...) end
 end)
 
@@ -339,7 +337,7 @@ function AddOn.SlashCommandHandler(msg)
 		else
 			AddOn.lootFrame:Hide()
 			AddOn.db.lootWindowOpen = false
-		end		
+		end
 	end
 end
 

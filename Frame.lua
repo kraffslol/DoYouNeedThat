@@ -1,7 +1,10 @@
 local AddonName, AddOn = ...
-local CreateFrame, unpack, GetItemInfo, select, GetItemInfoInstant = CreateFrame, unpack, GetItemInfo, select, GetItemInfoInstant
+
+local CreateFrame, unpack, GetItemInfo, select = CreateFrame, unpack, GetItemInfo, select
+local GetItemInfoInstant = GetItemInfoInstant
 local ITEM_QUALITY_COLORS, CreateFont, UIParent = ITEM_QUALITY_COLORS, CreateFont, UIParent
 local tsort, tonumber, xpcall, tostring, geterrorhandler = table.sort, tonumber, xpcall, tostring, geterrorhandler
+local IsModifiedClick, ChatEdit_InsertLink, DressUpItemLink = IsModifiedClick, ChatEdit_InsertLink, DressUpItemLink
 
 function AddOn:repositionFrames()
 	local lastentry = nil
@@ -34,6 +37,12 @@ function AddOn.setItemTooltip(frame, item)
 	frame.tex:SetTexture(tex)
 	frame:SetScript("OnEnter", function() AddOn.ShowItemTooltip(item) end)
 	frame:SetScript("OnLeave", function() AddOn.HideItemTooltip() end)
+    frame:SetScript("OnClick", function()
+        if IsModifiedClick("CHATLINK") then
+            if ChatEdit_InsertLink(item) then return true end
+        end
+        if IsModifiedClick("DRESSUP") then return DressUpItemLink(item) end
+    end)
 	AddOn.setItemBorderColor(frame, item)
 	frame:Show()
 end
@@ -253,7 +262,7 @@ for i = 1, 20 do
 	entry:Hide()
 
 	---@type Frame
-	entry.item = CreateFrame("frame", nil, entry)
+	entry.item = CreateFrame("Button", nil, entry)
 	entry.item:SetSize(20,20)
 	--entry.item:Hide();
 	entry.item:SetPoint("LEFT", entry, "LEFT", 12, 0)
@@ -277,7 +286,7 @@ for i = 1, 20 do
 	entry.name:SetPoint("LEFT", entry, "LEFT", 90, 0)
 
 	---@type Frame
-	entry.looterEq1 = CreateFrame("frame", nil, entry)
+	entry.looterEq1 = CreateFrame("Button", nil, entry)
 	entry.looterEq1:SetSize(20,20)
 	--entry.looterEq1:Hide()
 	entry.looterEq1:SetPoint("LEFT", entry, "LEFT", 181, 0)
@@ -291,7 +300,7 @@ for i = 1, 20 do
 	entry.looterEq1.tex:SetPoint("BOTTOMRIGHT", entry.looterEq1, "BOTTOMRIGHT", -2, 2)
 
 	---@type Frame
-	entry.looterEq2 = CreateFrame("frame", nil, entry)
+	entry.looterEq2 = CreateFrame("Button", nil, entry)
 	entry.looterEq2:SetSize(20,20)
 	entry.looterEq2:Hide()
 	entry.looterEq2:SetPoint("LEFT", entry, "LEFT", 203, 0)
