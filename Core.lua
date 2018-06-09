@@ -4,7 +4,7 @@ local AddonName, AddOn = ...
 local _G, print, gsub, sfind = _G, print, string.gsub, string.find
 local GetItemInfo, IsEquippableItem = GetItemInfo, IsEquippableItem
 local GetInventoryItemLink, UnitClass = GetInventoryItemLink, UnitClass
-local GameTooltip, SendChatMessage, UIParent, ShowUIPanel = GameTooltip, SendChatMessage, UIParent, ShowUIPanel
+local SendChatMessage, UIParent = SendChatMessage, UIParent
 local select, IsInGroup, GetItemInfoInstant = select, IsInGroup, GetItemInfoInstant
 local UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo = UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo
 local C_Timer, GetPlayerInfoByGUID, InCombatLockdown, time = C_Timer, GetPlayerInfoByGUID, InCombatLockdown, time
@@ -71,26 +71,24 @@ function AddOn:CHAT_MSG_LOOT(...)
 
 	self.Debug(item .. " " .. iLvl)
 
-	--if self.IsItemUpgrade(iLvl, equipLoc) then
-		--self.Print("Item is upgrade")
+	if self.IsItemUpgrade(iLvl, equipLoc) then
 		if not sfind(looter, '-') then
 			looter = self.Utils.GetUnitNameWithRealm(looter)
 		end
 		local t = {item, looter, iLvl}
 		self:AddItemToLootTable(t)
-	--end
+	end
 end
 
 function AddOn:BOSS_KILL()
-	local _, _, difficulty = GetInstanceInfo()
 	self:ClearEntries()
-	if self.Config.openAfterEncounter and difficulty ~= 8 then self.lootFrame:Show() end
+	if self.Config.openAfterEncounter then self.lootFrame:Show() end
 end
 
 function AddOn:PLAYER_ENTERING_WORLD()
-	local _, instanceType = GetInstanceInfo()
+	local _, instanceType, difficulty = GetInstanceInfo()
 	if instanceType == "none" then
-		self.Debug("Not in instance, unregistering events")
+		-- self.Debug("Not in instance, unregistering events")
 		self.EventFrame:UnregisterEvent("CHAT_MSG_LOOT")
 		self.EventFrame:UnregisterEvent("BOSS_KILL")
 		if self.InspectTimer then
@@ -101,7 +99,8 @@ function AddOn:PLAYER_ENTERING_WORLD()
 	end
 	self.Debug("In instance, registering events")
 	self.EventFrame:RegisterEvent("CHAT_MSG_LOOT")
-	self.EventFrame:RegisterEvent("BOSS_KILL")
+    -- Don't register BOSS_KILL event if its M+
+	if difficulty ~= 8 then self.EventFrame:RegisterEvent("BOSS_KILL") end
 	-- Set repeated timer to check for raidmembers inventory
 	self.InspectTimer = C_Timer.NewTicker(7, function() self.InspectGroup() end)
 end
@@ -136,7 +135,7 @@ function AddOn:ADDON_LOADED(addon)
     self.createOptionsFrame()
 end
 
-function AddOn.GetEquippedIlvlBySlotID(slotID)
+local function GetEquippedIlvlBySlotID(slotID)
 	local item = GetInventoryItemLink('player', slotID)
 	local _, iLvl = LibItemLevel:GetItemInfo(item)
 	return iLvl
@@ -146,20 +145,20 @@ function AddOn.IsItemUpgrade(ilvl, equipLoc)
 	if ilvl ~= nil and equipLoc ~= nil and equipLoc ~= '' then
 		-- Evaluate item. If ilvl > your current ilvl
 		if equipLoc == 'INVTYPE_FINGER' then
-			local eqIlvl1 = AddOn.GetEquippedIlvlBySlotID(11)
-			local eqIlvl2 = AddOn.GetEquippedIlvlBySlotID(12)
+			local eqIlvl1 = GetEquippedIlvlBySlotID(11)
+			local eqIlvl2 = GetEquippedIlvlBySlotID(12)
 			if eqIlvl1 < ilvl or eqIlvl2 < ilvl then return true end
 		elseif equipLoc == 'INVTYPE_TRINKET' then
-			local eqIlvl1 = AddOn.GetEquippedIlvlBySlotID(13)
-			local eqIlvl2 = AddOn.GetEquippedIlvlBySlotID(14)
+			local eqIlvl1 = GetEquippedIlvlBySlotID(13)
+			local eqIlvl2 = GetEquippedIlvlBySlotID(14)
 			if eqIlvl1 < ilvl or eqIlvl2 < ilvl then return true end
 		elseif equipLoc == 'INVTYPE_WEAPON' then
-			local eqIlvl1 = AddOn.GetEquippedIlvlBySlotID(16)
-			local eqIlvl2 = AddOn.GetEquippedIlvlBySlotID(17)
+			local eqIlvl1 = GetEquippedIlvlBySlotID(16)
+			local eqIlvl2 = GetEquippedIlvlBySlotID(17)
 			if eqIlvl1 < ilvl or eqIlvl2 < ilvl then return true end
 		else
 			local slotID = AddOn.Utils.GetSlotID(equipLoc)
-			local eqIlvl = AddOn.GetEquippedIlvlBySlotID(slotID)
+			local eqIlvl = GetEquippedIlvlBySlotID(slotID)
 			if eqIlvl < ilvl then return true end
 		end
 	end
@@ -242,18 +241,6 @@ function AddOn:AddItemToLootTable(t)
 	entry:Show()
 end
 
-function AddOn.ShowItemTooltip(itemLink)
-	ShowUIPanel(GameTooltip)
-	GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
-	GameTooltip:SetHyperlink(itemLink)
-	--GameTooltip_ShowCompareItem();
-	GameTooltip:Show()
-end
-
-function AddOn.HideItemTooltip()
-	GameTooltip:Hide()
-end
-
 function AddOn:SendWhisper(itemLink, looter)
 	-- Replace [item] with itemLink if supplied
 	local message = self.Config.whisperMessage:gsub("%[item%]", itemLink)
@@ -270,6 +257,10 @@ function AddOn.InspectPlayer(unit)
 		return false
 	end
 	return true
+end
+
+function AddOn.CleanUpGroup()
+
 end
 
 function AddOn.InspectGroup()
@@ -316,7 +307,7 @@ end)
 AddOn.EventFrame:RegisterEvent("ADDON_LOADED")
 AddOn.EventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 
-function AddOn.SlashCommandHandler(msg)
+local function SlashCommandHandler(msg)
 	local _, _, cmd, args = sfind(msg, "%s?(%w+)%s?(.*)")
 	if cmd == "clear" then
 		AddOn:ClearEntries()
@@ -343,7 +334,7 @@ end
 
 SLASH_DYNT1 = "/dynt"
 SLASH_DYNT2 = "/doyouneedthat"
-SlashCmdList["DYNT"] = AddOn.SlashCommandHandler
+SlashCmdList["DYNT"] = SlashCommandHandler
 
 -- Bindings
 BINDING_HEADER_DOYOUNEEDTHAT = "DoYouNeedThat"

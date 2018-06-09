@@ -5,6 +5,88 @@ local GetItemInfoInstant = GetItemInfoInstant
 local ITEM_QUALITY_COLORS, CreateFont, UIParent = ITEM_QUALITY_COLORS, CreateFont, UIParent
 local tsort, tonumber, xpcall, tostring, geterrorhandler = table.sort, tonumber, xpcall, tostring, geterrorhandler
 local IsModifiedClick, ChatEdit_InsertLink, DressUpItemLink = IsModifiedClick, ChatEdit_InsertLink, DressUpItemLink
+local ShowUIPanel, GameTooltip = ShowUIPanel, GameTooltip
+
+local function showItemTooltip(itemLink)
+    ShowUIPanel(GameTooltip)
+    GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
+    GameTooltip:SetHyperlink(itemLink)
+    --GameTooltip_ShowCompareItem();
+    GameTooltip:Show()
+end
+
+local function hideItemTooltip() GameTooltip:Hide() end
+
+local function skinBackdrop(frame, ...)
+    if (frame.background) then return false end
+
+    local border = {0,0,0,1}
+    local color = {...}
+    if (not ... ) then
+        color = {.11,.15,.18, 1}
+        border = {.06, .08, .09, 1}
+    end
+
+    frame:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+    frame:SetBackdropColor(unpack(color))
+    frame:SetBackdropBorderColor(unpack(border))
+
+    return true
+end
+
+local function skinButton(frame, small, color)
+    local colors = {.1,.1,.1,1}
+    local hovercolors = {0,0.55,.85,1}
+    if (color == "red") then
+        colors = {.6,.1,.1,0.6}
+        hovercolors = {.6,.1,.1,1}
+    elseif (color == "blue") then
+        colors = {0,0.55,.85,0.6}
+        hovercolors = {0,0.55,.85,1}
+    elseif (color == "dark") then
+        colors = {.1,.1,.1,1}
+        hovercolors = {.1,.1,.1,1}
+    elseif (color == "lightgrey") then
+        colors = {.219, .219, .219, 1}
+        hovercolors = {.270, .270, .270, 1}
+    end
+    frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+        insets = {left=1,top=1,right=1,bottom=1}
+    })
+    frame:SetBackdropColor(unpack(colors))
+    frame:SetBackdropBorderColor(0,0,0,1)
+    frame:SetNormalFontObject("dynt_button")
+    frame:SetHighlightFontObject("dynt_button")
+    frame:SetPushedTextOffset(0,-1)
+
+    frame:SetSize(frame:GetTextWidth()+16,24)
+
+    if (small and frame:GetWidth() <= 24 ) then
+        frame:SetWidth(20)
+    end
+
+    if (small) then
+        frame:SetHeight(18)
+    end
+
+    frame:HookScript("OnEnter", function(f)
+        f:SetBackdropColor(unpack(hovercolors))
+    end)
+    frame:HookScript("OnLeave", function(f)
+        f:SetBackdropColor(unpack(colors))
+    end)
+
+    return true
+end
+
+local function setItemBorderColor(frame, item)
+    local color = ITEM_QUALITY_COLORS[select(3, GetItemInfo(item))]
+    frame:SetBackdropBorderColor(color.r, color.g, color.b, 1)
+    return true
+end
 
 function AddOn:repositionFrames()
 	local lastentry = nil
@@ -26,90 +108,19 @@ function AddOn:repositionFrames()
 	end
 end
 
-function AddOn.setItemBorderColor(frame, item)
-	local color = ITEM_QUALITY_COLORS[select(3, GetItemInfo(item))]
-	frame:SetBackdropBorderColor(color.r, color.g, color.b, 1)
-	return true
-end
-
 function AddOn.setItemTooltip(frame, item)
 	local tex = select(5, GetItemInfoInstant(item))
 	frame.tex:SetTexture(tex)
-	frame:SetScript("OnEnter", function() AddOn.ShowItemTooltip(item) end)
-	frame:SetScript("OnLeave", function() AddOn.HideItemTooltip() end)
+	frame:SetScript("OnEnter", function() showItemTooltip(item) end)
+	frame:SetScript("OnLeave", function() hideItemTooltip() end)
     frame:SetScript("OnClick", function()
         if IsModifiedClick("CHATLINK") then
             if ChatEdit_InsertLink(item) then return true end
         end
         if IsModifiedClick("DRESSUP") then return DressUpItemLink(item) end
     end)
-	AddOn.setItemBorderColor(frame, item)
+	setItemBorderColor(frame, item)
 	frame:Show()
-end
-
-local function skinBackdrop(frame, ...)
-	if (frame.background) then return false end
-	
-	local border = {0,0,0,1}
-	local color = {...}
-	if (not ... ) then
-		color = {.11,.15,.18, 1}
-		border = {.06, .08, .09, 1}
-	end
-
-	frame:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
-    frame:SetBackdropColor(unpack(color))
-    frame:SetBackdropBorderColor(unpack(border))
-	
-	return true
-end
-
-local function skinButton(frame, small, color)
-	local colors = {.1,.1,.1,1}
-	local hovercolors = {0,0.55,.85,1}
-	if (color == "red") then
-		colors = {.6,.1,.1,0.6}
-		hovercolors = {.6,.1,.1,1}
-	elseif (color == "blue") then
-		colors = {0,0.55,.85,0.6}
-		hovercolors = {0,0.55,.85,1}
-	elseif (color == "dark") then
-		colors = {.1,.1,.1,1}
-		hovercolors = {.1,.1,.1,1}
-	elseif (color == "lightgrey") then
-		colors = {.219, .219, .219, 1}
-		hovercolors = {.270, .270, .270, 1}
-	end
-	frame:SetBackdrop({
-		bgFile = "Interface\\Buttons\\WHITE8x8",
-		edgeFile = "Interface\\Buttons\\WHITE8x8",
-		edgeSize = 1,
-		insets = {left=1,top=1,right=1,bottom=1}
-	})
-	frame:SetBackdropColor(unpack(colors)) 
-    frame:SetBackdropBorderColor(0,0,0,1)
-    frame:SetNormalFontObject("dynt_button")
-	frame:SetHighlightFontObject("dynt_button")
-	frame:SetPushedTextOffset(0,-1)
-	
-	frame:SetSize(frame:GetTextWidth()+16,24)
-
-	if (small and frame:GetWidth() <= 24 ) then
-		frame:SetWidth(20)
-	end
-	
-	if (small) then
-		frame:SetHeight(18)
-	end
-	
-	frame:HookScript("OnEnter", function(f) 
-		f:SetBackdropColor(unpack(hovercolors)) 
-	end)
-	frame:HookScript("OnLeave", function(f) 
-		f:SetBackdropColor(unpack(colors)) 
-	end)
-	
-	return true
 end
 
 local normal_button_text = CreateFont("dynt_button")
