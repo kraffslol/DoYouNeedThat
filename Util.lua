@@ -1,4 +1,4 @@
-local AddonName, AddOn = ...
+local _, AddOn = ...
 local UnitGUID, GetRealmName, GetPlayerInfoByGUID = UnitGUID, GetRealmName, GetPlayerInfoByGUID
 local Utils = {}
 
@@ -12,7 +12,7 @@ local LE_ITEM_WEAPON_STAFF, LE_ITEM_WEAPON_UNARMED, LE_ITEM_WEAPON_DAGGER = LE_I
 local LE_ITEM_WEAPON_BOWS, LE_ITEM_WEAPON_CROSSBOW, LE_ITEM_WEAPON_GUNS = LE_ITEM_WEAPON_BOWS, LE_ITEM_WEAPON_CROSSBOW, LE_ITEM_WEAPON_GUNS
 local LE_ITEM_WEAPON_WAND, LE_ITEM_ARMOR_SHIELD, LE_ITEM_WEAPON_AXE2H = LE_ITEM_WEAPON_WAND, LE_ITEM_ARMOR_SHIELD, LE_ITEM_WEAPON_AXE2H
 
-DoYouNeedThat.Utils = Utils
+AddOn.Utils = Utils
 
 function Utils.GetUnitNameWithRealm(unit)
 	local guid = UnitGUID(unit)
@@ -241,3 +241,40 @@ Utils.ValidGear = {
 		}		
 	}
 }
+
+local relicTypes = {
+	BLOOD     = 'Blood',
+	SHADOW    = 'Shadow',
+	IRON      = 'Iron',
+	FROST     = 'Frost',
+	FIRE      = 'Fire',
+	FEL       = 'Fel',
+	ARCANE    = 'Arcane',
+	LIFE      = 'Life',
+	STORM     = 'Wind', -- Great job Blizzard -.-
+	HOLY      = 'Holy'
+}
+
+Utils.Relics = {
+	DEATHKNIGHT = {relicTypes.BLOOD, relicTypes.SHADOW,relicTypes.IRON,  relicTypes.FROST, relicTypes.FIRE },
+	DEMONHUNTER = {relicTypes.FEL,   relicTypes.SHADOW,relicTypes.IRON,  relicTypes.ARCANE},
+	DRUID       = {relicTypes.ARCANE,relicTypes.LIFE,  relicTypes.FIRE,  relicTypes.BLOOD, relicTypes.FROST},
+	HUNTER      = {relicTypes.STORM, relicTypes.ARCANE,relicTypes.IRON,  relicTypes.BLOOD, relicTypes.LIFE},
+	MAGE        = {relicTypes.ARCANE,relicTypes.FROST, relicTypes.FIRE},
+	MONK        = {relicTypes.LIFE,  relicTypes.STORM, relicTypes.IRON,  relicTypes.FROST},
+	PALADIN     = {relicTypes.HOLY,  relicTypes.LIFE,  relicTypes.FIRE,  relicTypes.IRON,  relicTypes.ARCANE},
+	PRIEST      = {relicTypes.HOLY,  relicTypes.SHADOW,relicTypes.LIFE,  relicTypes.BLOOD},
+	ROGUE       = {relicTypes.SHADOW,relicTypes.IRON,  relicTypes.BLOOD, relicTypes.STORM, relicTypes.FEL},
+	SHAMAN      = {relicTypes.STORM, relicTypes.FROST, relicTypes.FIRE,  relicTypes.IRON,  relicTypes.LIFE},
+	WARLOCK     = {relicTypes.SHADOW,relicTypes.BLOOD, relicTypes.FIRE,  relicTypes.FEL},
+	WARRIOR     = {relicTypes.IRON,  relicTypes.BLOOD, relicTypes.SHADOW,relicTypes.FIRE,  relicTypes.STORM},
+}
+
+function Utils.GetItemIDFromLink(link)
+	return tonumber(strmatch(link or "", "item:(%d+):"))
+end
+
+function Utils:IsRelicValid(type)
+	local _, class = UnitClass("player")
+	return tContains(self.Relics[class], type)
+end

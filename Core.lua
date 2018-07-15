@@ -7,7 +7,7 @@ local GetInventoryItemLink, UnitClass = GetInventoryItemLink, UnitClass
 local SendChatMessage, UIParent = SendChatMessage, UIParent
 local select, IsInGroup, GetItemInfoInstant = select, IsInGroup, GetItemInfoInstant
 local UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo = UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo
-local C_Timer, GetPlayerInfoByGUID, InCombatLockdown, time = C_Timer, GetPlayerInfoByGUID, InCombatLockdown, time
+local C_Timer, InCombatLockdown, time = C_Timer, InCombatLockdown, time
 local UnitIsConnected, CanInspect, UnitName = UnitIsConnected, CanInspect, UnitName
 local WEAPON, ARMOR, RAID_CLASS_COLORS = WEAPON, ARMOR, RAID_CLASS_COLORS
 local CreateFrame = CreateFrame
@@ -31,7 +31,6 @@ local _, playerClass = UnitClass("player")
 	TODO:
 		* RaidMembers cleanup
 		* Minimap button
-		* Confirm delete dialog
 --]]
 
 AddOn.EventFrame = CreateFrame("Frame", nil, UIParent);
@@ -58,18 +57,36 @@ function AddOn:CHAT_MSG_LOOT(...)
 	local _, item = message:match(LOOT_ITEM_PATTERN)
 
 	if not item then return end
-	if not IsEquippableItem(item) then return end
 
 	local _, _, rarity, _, _, type, _, _, equipLoc, _, _, itemClass, itemSubClass = GetItemInfo(item)
 
-	-- If not Armor/Weapon or if its a Legendary return
-	if (type ~= ARMOR and type ~= WEAPON) or (rarity == 5) then return end
-	-- If not equippable by your class return
-	if not self:IsEquippableForClass(itemClass, itemSubClass, equipLoc) then return end
+    if itemSubClass ~= 11 then
+        if not IsEquippableItem(item) then return end
+
+        -- If not Armor/Weapon or if its a Legendary return
+        if (type ~= ARMOR and type ~= WEAPON) or (rarity == 5) then return end
+        -- If not equippable by your class return
+        if not self:IsEquippableForClass(itemClass, itemSubClass, equipLoc) then return end
+    end
 
 	local _, iLvl = LibItemLevel:GetItemInfo(item)
 
 	self.Debug(item .. " " .. iLvl)
+
+    if itemSubClass == 11 then
+        local itemId = self.Utils.GetItemIDFromLink(item)
+        local _, _, type = C_ArtifactUI.GetRelicInfoByItemID(itemId)
+        if not self.Utils:IsRelicValid(type) then return end
+        self.Debug("Found valid relic")
+        if self.IsRelicUpgrade(iLvl, type) then
+            if not sfind(looter, '-') then
+                looter = self.Utils.GetUnitNameWithRealm(looter)
+            end
+            local t = {item, looter, iLvl}
+            self:AddItemToLootTable(t)
+        end
+        return
+    end
 
 	if self.IsItemUpgrade(iLvl, equipLoc) then
 		if not sfind(looter, '-') then
@@ -141,6 +158,21 @@ local function GetEquippedIlvlBySlotID(slotID)
 	return iLvl
 end
 
+-- Temp
+function AddOn.IsRelicUpgrade(ilvl, relicType)
+    for i = 1,3 do
+        _, _, eqRelicType, link = C_ArtifactUI.GetEquippedArtifactRelicInfo(i)
+        if eqRelicType == relicType then
+            local _, eqIlvl = LibItemLevel:GetItemInfo(link)
+            if ilvl > eqIlvl then
+                return true
+            end
+            return false
+        end
+    end
+    return false
+end
+
 function AddOn.IsItemUpgrade(ilvl, equipLoc)
 	if ilvl ~= nil and equipLoc ~= nil and equipLoc ~= '' then
 		-- Evaluate item. If ilvl > your current ilvl
@@ -206,16 +238,15 @@ function AddOn:AddItemToLootTable(t)
 	-- Itemlink, Looter, Ilvl
 	self.Debug("Adding item to entries")
 	local entry = self:GetEntry(t[1], t[2])
-	local _, _, _, equipLoc = GetItemInfoInstant(t[1])
+	local _, _, _, equipLoc, _, _, itemSubClass = GetItemInfoInstant(t[1])
 	local character = t[2]:match("(.*)%-") or t[2]
 	local classColor = RAID_CLASS_COLORS[select(2, UnitClass(character))]
-
 	entry.itemLink = t[1]
 	entry.looter = t[2]
 	entry.guid = UnitGUID(character)
 
 	-- If looter has been inspected, show their equipped items in those slots
-	if self.RaidMembers[entry.guid] then
+	if self.RaidMembers[entry.guid] and itemSubClass ~= 11 then
 		local raidMember = self.RaidMembers[entry.guid]
 		local item, item2 = nil, nil
 		if equipLoc == "INVTYPE_FINGER" then

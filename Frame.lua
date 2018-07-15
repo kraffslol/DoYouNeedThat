@@ -1,9 +1,9 @@
-local AddonName, AddOn = ...
+local _, AddOn = ...
 
 local CreateFrame, unpack, GetItemInfo, select = CreateFrame, unpack, GetItemInfo, select
 local GetItemInfoInstant = GetItemInfoInstant
 local ITEM_QUALITY_COLORS, CreateFont, UIParent = ITEM_QUALITY_COLORS, CreateFont, UIParent
-local tsort, tonumber, xpcall, tostring, geterrorhandler = table.sort, tonumber, xpcall, tostring, geterrorhandler
+local tsort, tonumber, xpcall, geterrorhandler = table.sort, tonumber, xpcall, geterrorhandler
 local IsModifiedClick, ChatEdit_InsertLink, DressUpItemLink = IsModifiedClick, ChatEdit_InsertLink, DressUpItemLink
 local ShowUIPanel, GameTooltip = ShowUIPanel, GameTooltip
 
@@ -161,8 +161,8 @@ AddOn.lootFrame:Hide()
 AddOn.lootFrame.header = CreateFrame('frame', nil, AddOn.lootFrame)
 AddOn.lootFrame.header:EnableMouse(true)
 AddOn.lootFrame.header:RegisterForDrag('LeftButton','RightButton')
-AddOn.lootFrame.header:SetScript("OnDragStart", function(self) AddOn.lootFrame:StartMoving() end)
-AddOn.lootFrame.header:SetScript("OnDragStop", function(self)
+AddOn.lootFrame.header:SetScript("OnDragStart", function() AddOn.lootFrame:StartMoving() end)
+AddOn.lootFrame.header:SetScript("OnDragStop", function()
 	AddOn.lootFrame:StopMovingOrSizing() 
 	local point, _, _, x, y = AddOn.lootFrame:GetPoint()
 	AddOn.db.lootWindow = { point, x, y }
