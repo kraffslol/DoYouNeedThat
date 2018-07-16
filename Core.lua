@@ -16,6 +16,29 @@ local LOOT_ITEM_PATTERN = gsub(LOOT_ITEM, '%%s', '(.+)')
 local LibItemLevel = LibStub("LibItemLevel")
 local LibInspect = LibStub("LibInspect")
 local _, playerClass = UnitClass("player")
+local icon = LibStub("LibDBIcon-1.0")
+local LDB = LibStub("LibDataBroker-1.1"):NewDataObject("DoYouNeedThat", {
+    type = "data source",
+    text = "DoYouNeedThat",
+    icon = "Interface\\Icons\\inv_misc_bag_17",
+    OnClick = function(button,buttonPressed)
+        if buttonPressed == "RightButton" then
+            if AddOn.db.minimap.lock then
+                icon:Unlock("DoYouNeedThat")
+            else
+                icon:Lock("DoYouNeedThat")
+            end
+        else
+            AddOn:ToggleWindow()
+        end
+    end,
+    OnTooltipShow = function(tooltip)
+        if not tooltip or not tooltip.AddLine then return end
+        tooltip:AddLine("DoYouNeedThat")
+        tooltip:AddLine("Click to toggle Window")
+        tooltip:AddLine("Right-click to lock Minimap Button")
+    end,
+})
 
 --[[
 	IDEAS:
@@ -30,7 +53,7 @@ local _, playerClass = UnitClass("player")
 		* Version checking
 	TODO:
 		* RaidMembers cleanup
-		* Minimap button
+		* CHALLENGE_MODE_COMPLETED
 --]]
 
 AddOn.EventFrame = CreateFrame("Frame", nil, UIParent);
@@ -98,12 +121,14 @@ function AddOn:CHAT_MSG_LOOT(...)
 end
 
 function AddOn:BOSS_KILL()
+    local _, _, difficulty = GetInstanceInfo()
 	self:ClearEntries()
-	if self.Config.openAfterEncounter then self.lootFrame:Show() end
+    -- Don't open if its M+
+	if self.Config.openAfterEncounter and difficulty ~= 8 then self.lootFrame:Show() end
 end
 
 function AddOn:PLAYER_ENTERING_WORLD()
-	local _, instanceType, difficulty = GetInstanceInfo()
+	local _, instanceType = GetInstanceInfo()
 	if instanceType == "none" then
 		-- self.Debug("Not in instance, unregistering events")
 		self.EventFrame:UnregisterEvent("CHAT_MSG_LOOT")
@@ -116,8 +141,7 @@ function AddOn:PLAYER_ENTERING_WORLD()
 	end
 	self.Debug("In instance, registering events")
 	self.EventFrame:RegisterEvent("CHAT_MSG_LOOT")
-    -- Don't register BOSS_KILL event if its M+
-	if difficulty ~= 8 then self.EventFrame:RegisterEvent("BOSS_KILL") end
+    self.EventFrame:RegisterEvent("BOSS_KILL")
 	-- Set repeated timer to check for raidmembers inventory
 	self.InspectTimer = C_Timer.NewTicker(7, function() self.InspectGroup() end)
 end
@@ -135,7 +159,10 @@ function AddOn:ADDON_LOADED(addon)
 				whisperMessage = "Do you need [item]?",
 				openAfterEncounter = true,
 				debug = false,
-			}
+			},
+            minimap = {
+                hide = false
+            }
 		}
 	end
 
@@ -148,6 +175,11 @@ function AddOn:ADDON_LOADED(addon)
 
 	-- Replace config with saved one
 	self.Config = self.db.config
+
+    icon:Register("DoYouNeedThat", LDB, self.db.minimap)
+    if not self.db.minimap.hide then
+        icon:Show("DoYouNeedThat")
+    end
 
     self.createOptionsFrame()
 end
@@ -320,6 +352,16 @@ function AddOn.InspectGroup()
 	AddOn.inspectCount = i
 end
 
+function AddOn:ToggleWindow()
+    if not self.db.lootWindowOpen then
+        self.lootFrame:Show()
+        self.db.lootWindowOpen = true
+    else
+        self.lootFrame:Hide()
+        self.db.lootWindowOpen = false
+    end
+end
+
 LibInspect:SetMaxAge(599)
 LibInspect:AddHook(AddonName, "items", function(guid, data)
 	if data then
@@ -353,13 +395,7 @@ local function SlashCommandHandler(msg)
 		AddOn.Config.debug = not AddOn.Config.debug
 		AddOn.Print("Debug mode " .. (AddOn.Config.debug and "enabled" or "disabled"))
 	else
-		if not AddOn.db.lootWindowOpen then
-			AddOn.lootFrame:Show()
-			AddOn.db.lootWindowOpen = true
-		else
-			AddOn.lootFrame:Hide()
-			AddOn.db.lootWindowOpen = false
-		end
+        AddOn:ToggleWindow()
 	end
 end
 

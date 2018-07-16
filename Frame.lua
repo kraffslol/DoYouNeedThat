@@ -1,5 +1,6 @@
 local _, AddOn = ...
 
+local icon = LibStub("LibDBIcon-1.0")
 local CreateFrame, unpack, GetItemInfo, select = CreateFrame, unpack, GetItemInfo, select
 local GetItemInfoInstant = GetItemInfoInstant
 local ITEM_QUALITY_COLORS, CreateFont, UIParent = ITEM_QUALITY_COLORS, CreateFont, UIParent
@@ -398,6 +399,12 @@ function AddOn.createOptionsFrame()
     options.whisperMessage.labelText:SetShadowOffset(1, -1)
     options.whisperMessage.labelText:SetText("Whisper message (Use [item] shortcut if you want to link the item.)")
 
+	-- Hide minimap button
+	---@type CheckButton
+	options.hideMinimap = CreateFrame("CheckButton", "DYNT_Options_HideMinimap", options, "ChatConfigCheckButtonTemplate")
+	options.hideMinimap:SetPoint("TOPLEFT", options, "TOPLEFT", 12, -110)
+	DYNT_Options_HideMinimapText:SetText("Hide minimap button")
+	if AddOn.db.minimap.hide then options.hideMinimap:SetChecked(true) end
 
     -- Set the field values to their value in SavedVariables.
     function options.refreshFields()
@@ -405,6 +412,7 @@ function AddOn.createOptionsFrame()
         options.openAfterEncounter:SetChecked(AddOn.Config.openAfterEncounter)
         options.whisperMessage:SetText(AddOn.Config.whisperMessage)
         options.whisperMessage:SetCursorPosition(0)
+		options.hideMinimap:SetChecked(AddOn.db.minimap.hide)
     end
 
     function options.okay()
@@ -412,6 +420,11 @@ function AddOn.createOptionsFrame()
             AddOn.db.config.debug = options.debug:GetChecked()
             AddOn.db.config.openAfterEncounter = options.openAfterEncounter:GetChecked()
             AddOn.db.config.whisperMessage = options.whisperMessage:GetText()
+			if options.hideMinimap:GetChecked() then
+				icon:Hide("DoYouNeedThat")
+			else
+				icon:Show("DoYouNeedThat")
+			end
         end, geterrorhandler())
     end
 
