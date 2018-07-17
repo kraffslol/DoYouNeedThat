@@ -10,6 +10,7 @@ local UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo = UnitGUID, IsInRa
 local C_Timer, InCombatLockdown, time = C_Timer, InCombatLockdown, time
 local UnitIsConnected, CanInspect, UnitName = UnitIsConnected, CanInspect, UnitName
 local WEAPON, ARMOR, RAID_CLASS_COLORS = WEAPON, ARMOR, RAID_CLASS_COLORS
+local GetRelicInfoByItemID, GetEquippedArtifactRelicInfo = C_ArtifactUI.GetRelicInfoByItemID, C_ArtifactUI.GetEquippedArtifactRelicInfo
 local CreateFrame = CreateFrame
 
 local LOOT_ITEM_PATTERN = gsub(LOOT_ITEM, '%%s', '(.+)')
@@ -21,7 +22,7 @@ local LDB = LibStub("LibDataBroker-1.1"):NewDataObject("DoYouNeedThat", {
     type = "data source",
     text = "DoYouNeedThat",
     icon = "Interface\\Icons\\inv_misc_bag_17",
-    OnClick = function(button,buttonPressed)
+    OnClick = function(_,buttonPressed)
         if buttonPressed == "RightButton" then
             if AddOn.db.minimap.lock then
                 icon:Unlock("DoYouNeedThat")
@@ -51,12 +52,13 @@ local LDB = LibStub("LibDataBroker-1.1"):NewDataObject("DoYouNeedThat", {
 		* If new items and window open & minimized, then expand window
 		* Random whisper messages
 		* Version checking
+		* Pawn support
 	TODO:
 		* RaidMembers cleanup
-		* CHALLENGE_MODE_COMPLETED
+		* CHALLENGE_MODE_COMPLETED openAfterEncounter
 --]]
 
-AddOn.EventFrame = CreateFrame("Frame", nil, UIParent);
+AddOn.EventFrame = CreateFrame("Frame", nil, UIParent)
 AddOn.db = {}
 AddOn.Entries = {}
 AddOn.RaidMembers = {}
@@ -98,7 +100,7 @@ function AddOn:CHAT_MSG_LOOT(...)
 
     if itemSubClass == 11 then
         local itemId = self.Utils.GetItemIDFromLink(item)
-        local _, _, type = C_ArtifactUI.GetRelicInfoByItemID(itemId)
+        local _, _, type = GetRelicInfoByItemID(itemId)
         if not self.Utils:IsRelicValid(type) then return end
         self.Debug("Found valid relic")
         if self.IsRelicUpgrade(iLvl, type) then
@@ -193,7 +195,7 @@ end
 -- Temp
 function AddOn.IsRelicUpgrade(ilvl, relicType)
     for i = 1,3 do
-        _, _, eqRelicType, link = C_ArtifactUI.GetEquippedArtifactRelicInfo(i)
+        local _, _, eqRelicType, link = GetEquippedArtifactRelicInfo(i)
         if eqRelicType == relicType then
             local _, eqIlvl = LibItemLevel:GetItemInfo(link)
             if ilvl > eqIlvl then

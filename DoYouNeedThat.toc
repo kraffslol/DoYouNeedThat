@@ -9,6 +9,7 @@
 ## DefaultState: Enabled
 
 Libs\LibStub.lua
+Libs\CallbackHandler-1.0.lua
 Libs\LibItemLevel.lua
 Libs\LibInspect.lua
 Libs\LibDataBroker-1.1.lua

@@ -12,7 +12,7 @@ local function showItemTooltip(itemLink)
     ShowUIPanel(GameTooltip)
     GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
     GameTooltip:SetHyperlink(itemLink)
-    --GameTooltip_ShowCompareItem();
+    --GameTooltip_ShowCompareItem()
     GameTooltip:Show()
 end
 
@@ -146,7 +146,7 @@ normal_font:SetJustifyH("CENTER")
 -- Window
 ---@type Frame
 AddOn.lootFrame = CreateFrame('frame', 'DYNT', UIParent)
-skinBackdrop(AddOn.lootFrame, .1,.1,.1,.8);
+skinBackdrop(AddOn.lootFrame, .1,.1,.1,.8)
 AddOn.lootFrame:EnableMouse(true)
 AddOn.lootFrame:SetMovable(true)
 AddOn.lootFrame:SetUserPlaced(true)
@@ -276,7 +276,7 @@ for i = 1, 20 do
 	---@type Frame
 	entry.item = CreateFrame("Button", nil, entry)
 	entry.item:SetSize(20,20)
-	--entry.item:Hide();
+	--entry.item:Hide()
 	entry.item:SetPoint("LEFT", entry, "LEFT", 12, 0)
 	skinBackdrop(entry.item, 0, 0, 0, 1)
 
