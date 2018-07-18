@@ -1,8 +1,8 @@
-## Interface: 70300
+## Interface: 80000
 
 ## Title: DoYouNeedThat?
 ## Author: Kraffs
-## Version: 0.1
+## Version: 1.0
 ## Notes: Pesters people for loot because Personal Loot is fun!
 ## SavedVariables: DyntDB
 
