@@ -16,7 +16,7 @@ local CreateFrame = CreateFrame
 local LOOT_ITEM_PATTERN = gsub(LOOT_ITEM, '%%s', '(.+)')
 local LibItemLevel = LibStub("LibItemLevel")
 local LibInspect = LibStub("LibInspect")
-local _, playerClass = UnitClass("player")
+local _, playerClass, playerClassId = UnitClass("player")
 local icon = LibStub("LibDBIcon-1.0")
 local LDB = LibStub("LibDataBroker-1.1"):NewDataObject("DoYouNeedThat", {
     type = "data source",
@@ -92,6 +92,8 @@ function AddOn:CHAT_MSG_LOOT(...)
         if (type ~= ARMOR and type ~= WEAPON) or (rarity == 5) then return end
         -- If not equippable by your class return
         if not self:IsEquippableForClass(itemClass, itemSubClass, equipLoc) then return end
+		-- Should get rid of class specific pieces that you cannnot equip.
+		if not DoesItemContainSpec(item, playerClassId) then return end
     end
 
 	local _, iLvl = LibItemLevel:GetItemInfo(item)
@@ -103,23 +105,17 @@ function AddOn:CHAT_MSG_LOOT(...)
         local _, _, type = GetRelicInfoByItemID(itemId)
         if not self.Utils:IsRelicValid(type) then return end
         self.Debug("Found valid relic")
-        if self.IsRelicUpgrade(iLvl, type) then
-            if not sfind(looter, '-') then
-                looter = self.Utils.GetUnitNameWithRealm(looter)
-            end
-            local t = {item, looter, iLvl}
-            self:AddItemToLootTable(t)
-        end
-        return
+        if not self.IsRelicUpgrade(iLvl, type) then return end
+        --return
     end
 
-	if self.IsItemUpgrade(iLvl, equipLoc) then
-		if not sfind(looter, '-') then
-			looter = self.Utils.GetUnitNameWithRealm(looter)
-		end
-		local t = {item, looter, iLvl}
-		self:AddItemToLootTable(t)
+	if itemSubClass ~= 11 and not self.IsItemUpgrade(iLvl, equipLoc) then return end
+
+	if not sfind(looter, '-') then
+		looter = self.Utils.GetUnitNameWithRealm(looter)
 	end
+	local t = {item, looter, iLvl}
+	self:AddItemToLootTable(t)
 end
 
 function AddOn:BOSS_KILL()
