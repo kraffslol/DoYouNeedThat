@@ -42,23 +42,6 @@ local LDB = LibStub("LibDataBroker-1.1"):NewDataObject("DoYouNeedThat", {
     end,
 })
 
---[[
-	IDEAS:
-		* OnItemRecieved remove item from list?
-		* ENCOUNTER_LOOT_RECEIVED
-			encounterID, itemID, itemLink, quantity, playerName, className
-			https://github.com/tomrus88/BlizzardInterfaceCode/blob/master/Interface/FrameXML/LevelUpDisplay.lua#L1450-L1468
-		* 8.0 Look into new Item class (ContinueOnItemLoad Usage: NonEmptyItem:ContinueOnLoad(callbackFunction))
-		* Test: DoesItemContainSpec(link, classID)
-		* If new items and window open & minimized, then expand window
-		* Random whisper messages
-		* Version checking
-		* Pawn support
-	TODO:
-		* RaidMembers cleanup
-		* CHALLENGE_MODE_COMPLETED openAfterEncounter
---]]
-
 AddOn.EventFrame = CreateFrame("Frame", nil, UIParent)
 AddOn.db = {}
 AddOn.Entries = {}
