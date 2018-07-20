@@ -12,6 +12,7 @@ local UnitIsConnected, CanInspect, UnitName = UnitIsConnected, CanInspect, UnitN
 local WEAPON, ARMOR, RAID_CLASS_COLORS = WEAPON, ARMOR, RAID_CLASS_COLORS
 local GetRelicInfoByItemID, GetEquippedArtifactRelicInfo = C_ArtifactUI.GetRelicInfoByItemID, C_ArtifactUI.GetEquippedArtifactRelicInfo
 local CreateFrame = CreateFrame
+local IsAzeriteEmpoweredItemByID = C_AzeriteEmpoweredItem.IsAzeriteEmpoweredItemByID
 
 local LOOT_ITEM_PATTERN = gsub(LOOT_ITEM, '%%s', '(.+)')
 local LibItemLevel = LibStub("LibItemLevel")
@@ -82,6 +83,13 @@ function AddOn:CHAT_MSG_LOOT(...)
 	local _, item = message:match(LOOT_ITEM_PATTERN)
 
 	if not item then return end
+
+	--[[
+		Reason:
+		With Azerite Armor, item level is important, but there are many different trait combinations that you may want for your item sets.
+		Not allowing it to be traded means there won't be any pressure to let someone else have it.
+	]]
+	if IsAzeriteEmpoweredItemByID(item) then return end
 
 	local _, _, rarity, _, _, type, _, _, equipLoc, _, _, itemClass, itemSubClass = GetItemInfo(item)
 
@@ -284,6 +292,7 @@ function AddOn:AddItemToLootTable(t)
 		elseif equipLoc == "INVTYPE_TRINKET" then
 			item, item2 = raidMember.items[13], raidMember.items[14]
 		else
+			entry.looterEq2:Hide()
 			local slotId = self.Utils.GetSlotID(equipLoc)
 			item = raidMember.items[slotId]
 		end
