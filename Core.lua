@@ -13,6 +13,8 @@ local WEAPON, ARMOR, RAID_CLASS_COLORS = WEAPON, ARMOR, RAID_CLASS_COLORS
 local GetRelicInfoByItemID, GetEquippedArtifactRelicInfo = C_ArtifactUI.GetRelicInfoByItemID, C_ArtifactUI.GetEquippedArtifactRelicInfo
 local CreateFrame = CreateFrame
 local IsAzeriteEmpoweredItemByID = C_AzeriteEmpoweredItem.IsAzeriteEmpoweredItemByID
+-- Fix for clients with other languages
+local AUCTION_CATEGORY_ARMOR = AUCTION_CATEGORY_ARMOR
 
 local LOOT_ITEM_PATTERN = gsub(LOOT_ITEM, '%%s', '(.+)')
 local LibItemLevel = LibStub("LibItemLevel")
@@ -80,7 +82,7 @@ function AddOn:CHAT_MSG_LOOT(...)
         if not IsEquippableItem(item) then return end
 
         -- If not Armor/Weapon or if its a Legendary return
-        if (type ~= ARMOR and type ~= WEAPON) or (rarity == 5) then return end
+        if (type ~= ARMOR and type ~= AUCTION_CATEGORY_ARMOR and type ~= WEAPON) or (rarity == 5) then return end
         -- If not equippable by your class return
         if not self:IsEquippableForClass(itemClass, itemSubClass, equipLoc) then return end
 		-- Should get rid of class specific pieces that you cannnot equip.
