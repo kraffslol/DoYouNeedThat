@@ -259,7 +259,6 @@ vote_table.equipped_text:SetText("Looter Eq")
 vote_table.equipped_text:SetTextColor(1, 1, 1)
 vote_table.equipped_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 175, 16)
 
--- Test entries
 local lastframe = nil
 for i = 1, 20 do
 	---@type Button

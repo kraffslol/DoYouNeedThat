@@ -200,19 +200,19 @@ function AddOn.IsItemUpgrade(ilvl, equipLoc)
 		if equipLoc == 'INVTYPE_FINGER' then
 			local eqIlvl1 = GetEquippedIlvlBySlotID(11)
 			local eqIlvl2 = GetEquippedIlvlBySlotID(12)
-			if eqIlvl1 < ilvl or eqIlvl2 < ilvl then return true end
+			if eqIlvl1 <= ilvl or eqIlvl2 <= ilvl then return true end
 		elseif equipLoc == 'INVTYPE_TRINKET' then
 			local eqIlvl1 = GetEquippedIlvlBySlotID(13)
 			local eqIlvl2 = GetEquippedIlvlBySlotID(14)
-			if eqIlvl1 < ilvl or eqIlvl2 < ilvl then return true end
+			if eqIlvl1 <= ilvl or eqIlvl2 <= ilvl then return true end
 		elseif equipLoc == 'INVTYPE_WEAPON' then
 			local eqIlvl1 = GetEquippedIlvlBySlotID(16)
 			local eqIlvl2 = GetEquippedIlvlBySlotID(17)
-			if eqIlvl1 < ilvl or eqIlvl2 < ilvl then return true end
+			if eqIlvl1 <= ilvl or eqIlvl2 <= ilvl then return true end
 		else
 			local slotID = AddOn.Utils.GetSlotID(equipLoc)
 			local eqIlvl = GetEquippedIlvlBySlotID(slotID)
-			if eqIlvl < ilvl then return true end
+			if eqIlvl <= ilvl then return true end
 		end
 	end
 	return false
