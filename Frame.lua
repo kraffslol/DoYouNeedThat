@@ -421,8 +421,10 @@ function AddOn.createOptionsFrame()
             AddOn.db.config.whisperMessage = options.whisperMessage:GetText()
 			if options.hideMinimap:GetChecked() then
 				icon:Hide("DoYouNeedThat")
+				AddOn.db.minimap.hide = true;
 			else
 				icon:Show("DoYouNeedThat")
+				AddOn.db.minimap.hide = false;
 			end
         end, geterrorhandler())
     end

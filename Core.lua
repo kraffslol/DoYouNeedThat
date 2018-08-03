@@ -81,8 +81,10 @@ function AddOn:CHAT_MSG_LOOT(...)
     if itemSubClass ~= 11 then
         if not IsEquippableItem(item) then return end
 
-        -- If not Armor/Weapon or if its a Legendary return
-        if (type ~= ARMOR and type ~= AUCTION_CATEGORY_ARMOR and type ~= WEAPON) or (rarity == 5) then return end
+        -- If not Armor/Weapon
+        if (type ~= ARMOR and type ~= AUCTION_CATEGORY_ARMOR and type ~= WEAPON) then return end
+		-- If its a Legendary or under rare quality
+		if rarity == 5 or rarity < 3 then return end
         -- If not equippable by your class return
         if not self:IsEquippableForClass(itemClass, itemSubClass, equipLoc) then return end
 		-- Should get rid of class specific pieces that you cannnot equip.
