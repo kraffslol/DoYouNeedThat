@@ -104,7 +104,7 @@ function AddOn:CHAT_MSG_LOOT(...)
         --return
     end
 
-	if itemSubClass ~= 11 and not self.IsItemUpgrade(iLvl, equipLoc) then return end
+	if itemSubClass ~= 11 and not self:IsItemUpgrade(iLvl, equipLoc) then return end
 
 	if not sfind(looter, '-') then
 		looter = self.Utils.GetUnitNameWithRealm(looter)
@@ -152,6 +152,7 @@ function AddOn:ADDON_LOADED(addon)
 				whisperMessage = "Do you need [item]?",
 				openAfterEncounter = true,
 				debug = false,
+				minDelta = 0,
 			},
             minimap = {
                 hide = false
@@ -160,6 +161,11 @@ function AddOn:ADDON_LOADED(addon)
 	end
 
 	self.db = DyntDB
+
+	-- Set minDelta default if its not a fresh install
+	if not self.db.config.minDelta then
+		self.db.config.minDelta = 0
+	end
 
 	-- Set window position
 	self.lootFrame:SetPoint(self.db.lootWindow[1], self.db.lootWindow[2], self.db.lootWindow[3])
@@ -198,25 +204,30 @@ function AddOn.IsRelicUpgrade(ilvl, relicType)
     return false
 end
 
-function AddOn.IsItemUpgrade(ilvl, equipLoc)
+function AddOn:IsItemUpgrade(ilvl, equipLoc)
+	local function overOrWithinMin(ilvl, eq, delta)
+		return eq <= ilvl or ilvl >= eq - delta
+	end
+
 	if ilvl ~= nil and equipLoc ~= nil and equipLoc ~= '' then
+		local delta = self.Config.minDelta
 		-- Evaluate item. If ilvl > your current ilvl
 		if equipLoc == 'INVTYPE_FINGER' then
 			local eqIlvl1 = GetEquippedIlvlBySlotID(11)
 			local eqIlvl2 = GetEquippedIlvlBySlotID(12)
-			if eqIlvl1 <= ilvl or eqIlvl2 <= ilvl then return true end
+			return overOrWithinMin(ilvl, eqIlvl1, delta) or overOrWithinMin(ilvl, eqIlvl2, delta)
 		elseif equipLoc == 'INVTYPE_TRINKET' then
 			local eqIlvl1 = GetEquippedIlvlBySlotID(13)
 			local eqIlvl2 = GetEquippedIlvlBySlotID(14)
-			if eqIlvl1 <= ilvl or eqIlvl2 <= ilvl then return true end
+			return overOrWithinMin(ilvl, eqIlvl1, delta) or overOrWithinMin(ilvl, eqIlvl2, delta)
 		elseif equipLoc == 'INVTYPE_WEAPON' then
 			local eqIlvl1 = GetEquippedIlvlBySlotID(16)
 			local eqIlvl2 = GetEquippedIlvlBySlotID(17)
-			if eqIlvl1 <= ilvl or eqIlvl2 <= ilvl then return true end
+			return overOrWithinMin(ilvl, eqIlvl1, delta) or overOrWithinMin(ilvl, eqIlvl2, delta)
 		else
 			local slotID = AddOn.Utils.GetSlotID(equipLoc)
 			local eqIlvl = GetEquippedIlvlBySlotID(slotID)
-			if eqIlvl <= ilvl then return true end
+			return overOrWithinMin(ilvl, eqIlvl, delta)
 		end
 	end
 	return false

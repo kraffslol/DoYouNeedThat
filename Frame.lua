@@ -405,6 +405,31 @@ function AddOn.createOptionsFrame()
 	DYNT_Options_HideMinimapText:SetText("Hide minimap button")
 	if AddOn.db.minimap.hide then options.hideMinimap:SetChecked(true) end
 
+    options.minDelta = CreateFrame("Slider", "DYNT_Options_MinDelta", options, "OptionsSliderTemplate")
+    options.minDelta:SetWidth(100)
+    options.minDelta:SetHeight(20)
+    options.minDelta:SetPoint("TOPLEFT", 22, -170)
+    options.minDelta:SetOrientation("HORIZONTAL")
+    options.minDelta:SetMinMaxValues(0, 30)
+    options.minDelta:SetValue(AddOn.Config.minDelta)
+    options.minDelta:SetValueStep(1)
+    options.minDelta:SetObeyStepOnDrag(true)
+    options.minDelta:SetScript("OnValueChanged", function (_, val) DYNT_Options_MinDeltaText:SetText(val) end)
+    options.tooltipText = "Minimum itemlevel allowed (Your equipped itemlevel - offset)"
+    DYNT_Options_MinDeltaLow:SetText("0")
+    DYNT_Options_MinDeltaHigh:SetText("30")
+    DYNT_Options_MinDeltaText:SetText(AddOn.Config.minDelta)
+    options.minDelta:Show()
+
+    local minDeltaLabel = options.minDelta:CreateFontString(nil, "BACKGROUND", "GameFontNormal")
+    minDeltaLabel:SetPoint("BOTTOMLEFT", options.minDelta, "TOPLEFT", 0, 20)
+    minDeltaLabel:SetJustifyH("LEFT")
+    options.minDelta.labelText = minDeltaLabel
+    options.minDelta.labelText:SetTextColor(1, 1, 1)
+    options.minDelta.labelText:SetShadowColor(0, 0, 0)
+    options.minDelta.labelText:SetShadowOffset(1, -1)
+    options.minDelta.labelText:SetText("Minimum Itemlevels lower (Equipped itemlevel - offset)")
+
     -- Set the field values to their value in SavedVariables.
     function options.refreshFields()
         options.debug:SetChecked(AddOn.Config.debug)
@@ -412,6 +437,7 @@ function AddOn.createOptionsFrame()
         options.whisperMessage:SetText(AddOn.Config.whisperMessage)
         options.whisperMessage:SetCursorPosition(0)
 		options.hideMinimap:SetChecked(AddOn.db.minimap.hide)
+        options.minDelta:SetValue(AddOn.Config.minDelta)
     end
 
     function options.okay()
@@ -426,6 +452,7 @@ function AddOn.createOptionsFrame()
 				icon:Show("DoYouNeedThat")
 				AddOn.db.minimap.hide = false;
 			end
+            AddOn.db.config.minDelta = options.minDelta:GetValue()
         end, geterrorhandler())
     end
 
