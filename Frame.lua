@@ -317,7 +317,7 @@ for i = 1, 20 do
 	entry.looterEq2:SetPoint("LEFT", entry, "LEFT", 203, 0)
 	skinBackdrop(entry.looterEq2, 0, 0, 0, 1)
 
-	entry.looterEq2.tex = entry.looterEq1:CreateTexture(nil, "OVERLAY")
+	entry.looterEq2.tex = entry.looterEq2:CreateTexture(nil, "OVERLAY")
 	entry.looterEq2.tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 	entry.looterEq2.tex:SetDrawLayer("ARTWORK")
 	entry.looterEq2.tex:SetTexture(nil)
