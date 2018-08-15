@@ -10,7 +10,6 @@ local UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo = UnitGUID, IsInRa
 local C_Timer, InCombatLockdown, time = C_Timer, InCombatLockdown, time
 local UnitIsConnected, CanInspect, UnitName = UnitIsConnected, CanInspect, UnitName
 local WEAPON, ARMOR, RAID_CLASS_COLORS = WEAPON, ARMOR, RAID_CLASS_COLORS
-local GetRelicInfoByItemID, GetEquippedArtifactRelicInfo = C_ArtifactUI.GetRelicInfoByItemID, C_ArtifactUI.GetEquippedArtifactRelicInfo
 local CreateFrame = CreateFrame
 local IsAzeriteEmpoweredItemByID = C_AzeriteEmpoweredItem.IsAzeriteEmpoweredItemByID
 -- Fix for clients with other languages
@@ -78,33 +77,23 @@ function AddOn:CHAT_MSG_LOOT(...)
 
 	local _, _, rarity, _, _, type, _, _, equipLoc, _, _, itemClass, itemSubClass = GetItemInfo(item)
 
-    if itemSubClass ~= 11 then
-        if not IsEquippableItem(item) then return end
 
-        -- If not Armor/Weapon
-        if (type ~= ARMOR and type ~= AUCTION_CATEGORY_ARMOR and type ~= WEAPON) then return end
-		-- If its a Legendary or under rare quality
-		if rarity == 5 or rarity < 3 then return end
-        -- If not equippable by your class return
-        if not self:IsEquippableForClass(itemClass, itemSubClass, equipLoc) then return end
-		-- Should get rid of class specific pieces that you cannnot equip.
-		if not DoesItemContainSpec(item, playerClassId) then return end
-    end
+	if not IsEquippableItem(item) then return end
+
+	-- If not Armor/Weapon
+	if (type ~= ARMOR and type ~= AUCTION_CATEGORY_ARMOR and type ~= WEAPON) then return end
+	-- If its a Legendary or under rare quality
+	if rarity == 5 or rarity < 3 then return end
+	-- If not equippable by your class return
+	if not self:IsEquippableForClass(itemClass, itemSubClass, equipLoc) then return end
+	-- Should get rid of class specific pieces that you cannnot equip.
+	if not DoesItemContainSpec(item, playerClassId) then return end
 
 	local _, iLvl = LibItemLevel:GetItemInfo(item)
 
 	self.Debug(item .. " " .. iLvl)
 
-    if itemSubClass == 11 then
-        local itemId = self.Utils.GetItemIDFromLink(item)
-        local _, _, type = GetRelicInfoByItemID(itemId)
-        if not self.Utils:IsRelicValid(type) then return end
-        self.Debug("Found valid relic")
-        if not self.IsRelicUpgrade(iLvl, type) then return end
-        --return
-    end
-
-	if itemSubClass ~= 11 and not self:IsItemUpgrade(iLvl, equipLoc) then return end
+	if not self:IsItemUpgrade(iLvl, equipLoc) then return end
 
 	if not sfind(looter, '-') then
 		looter = self.Utils.GetUnitNameWithRealm(looter)
@@ -189,21 +178,6 @@ local function GetEquippedIlvlBySlotID(slotID)
 	return iLvl
 end
 
--- Temp
-function AddOn.IsRelicUpgrade(ilvl, relicType)
-    for i = 1,3 do
-        local _, _, eqRelicType, link = GetEquippedArtifactRelicInfo(i)
-        if eqRelicType == relicType then
-            local _, eqIlvl = LibItemLevel:GetItemInfo(link)
-            if ilvl > eqIlvl then
-                return true
-            end
-            return false
-        end
-    end
-    return false
-end
-
 function AddOn:IsItemUpgrade(ilvl, equipLoc)
 	local function overOrWithinMin(ilvl, eq, delta)
 		return eq <= ilvl or ilvl >= eq - delta
@@ -282,7 +256,7 @@ function AddOn:AddItemToLootTable(t)
 	entry.guid = UnitGUID(character)
 
 	-- If looter has been inspected, show their equipped items in those slots
-	if self.RaidMembers[entry.guid] and itemSubClass ~= 11 then
+	if self.RaidMembers[entry.guid] then
 		local raidMember = self.RaidMembers[entry.guid]
 		local item, item2 = nil, nil
 		if equipLoc == "INVTYPE_FINGER" then
