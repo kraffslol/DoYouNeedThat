@@ -11,7 +11,6 @@ local C_Timer, InCombatLockdown, time = C_Timer, InCombatLockdown, time
 local UnitIsConnected, CanInspect, UnitName = UnitIsConnected, CanInspect, UnitName
 local WEAPON, ARMOR, RAID_CLASS_COLORS = WEAPON, ARMOR, RAID_CLASS_COLORS
 local CreateFrame = CreateFrame
-local IsAzeriteEmpoweredItemByID = C_AzeriteEmpoweredItem.IsAzeriteEmpoweredItemByID
 -- Fix for clients with other languages
 local AUCTION_CATEGORY_ARMOR = AUCTION_CATEGORY_ARMOR
 
@@ -67,13 +66,6 @@ function AddOn:CHAT_MSG_LOOT(...)
 	local _, item = message:match(LOOT_ITEM_PATTERN)
 
 	if not item then return end
-
-	--[[
-		Reason:
-		With Azerite Armor, item level is important, but there are many different trait combinations that you may want for your item sets.
-		Not allowing it to be traded means there won't be any pressure to let someone else have it.
-	]]
-	if IsAzeriteEmpoweredItemByID(item) then return end
 
 	local _, _, rarity, _, _, type, _, _, equipLoc, _, _, itemClass, itemSubClass = GetItemInfo(item)
 
