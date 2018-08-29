@@ -7,6 +7,8 @@ local ITEM_QUALITY_COLORS, CreateFont, UIParent = ITEM_QUALITY_COLORS, CreateFon
 local tsort, tonumber, xpcall, geterrorhandler = table.sort, tonumber, xpcall, geterrorhandler
 local IsModifiedClick, ChatEdit_InsertLink, DressUpItemLink = IsModifiedClick, ChatEdit_InsertLink, DressUpItemLink
 local ShowUIPanel, GameTooltip = ShowUIPanel, GameTooltip
+local IsAzeriteEmpoweredItemByID = C_AzeriteEmpoweredItem.IsAzeriteEmpoweredItemByID
+local OpenAzeriteEmpoweredItemUIFromLink = OpenAzeriteEmpoweredItemUIFromLink
 
 local function showItemTooltip(itemLink)
     ShowUIPanel(GameTooltip)
@@ -114,11 +116,17 @@ function AddOn.setItemTooltip(frame, item)
 	frame.tex:SetTexture(tex)
 	frame:SetScript("OnEnter", function() showItemTooltip(item) end)
 	frame:SetScript("OnLeave", function() hideItemTooltip() end)
-    frame:SetScript("OnClick", function()
+    frame:SetScript("OnClick", function(_, button)
         if IsModifiedClick("CHATLINK") then
             if ChatEdit_InsertLink(item) then return true end
         end
         if IsModifiedClick("DRESSUP") then return DressUpItemLink(item) end
+        if button == "RightButton" and IsModifiedClick("EXPANDITEM") then
+            if IsAzeriteEmpoweredItemByID(item) then
+                OpenAzeriteEmpoweredItemUIFromLink(item);
+                return true;
+            end
+        end
     end)
 	setItemBorderColor(frame, item)
 	frame:Show()
@@ -277,6 +285,7 @@ for i = 1, 20 do
 	entry.item:SetSize(20,20)
 	--entry.item:Hide()
 	entry.item:SetPoint("LEFT", entry, "LEFT", 12, 0)
+    entry.item:RegisterForClicks("LeftButtonDown","RightButtonUp")
 	skinBackdrop(entry.item, 0, 0, 0, 1)
 
 	entry.item.tex = entry.item:CreateTexture(nil, "OVERLAY")
@@ -301,6 +310,7 @@ for i = 1, 20 do
 	entry.looterEq1:SetSize(20,20)
 	--entry.looterEq1:Hide()
 	entry.looterEq1:SetPoint("LEFT", entry, "LEFT", 181, 0)
+    entry.looterEq1:RegisterForClicks("LeftButtonDown","RightButtonUp")
 	skinBackdrop(entry.looterEq1, 0, 0, 0, 1)
 
 	entry.looterEq1.tex = entry.looterEq1:CreateTexture(nil, "OVERLAY")
@@ -315,6 +325,7 @@ for i = 1, 20 do
 	entry.looterEq2:SetSize(20,20)
 	entry.looterEq2:Hide()
 	entry.looterEq2:SetPoint("LEFT", entry, "LEFT", 203, 0)
+    entry.looterEq2:RegisterForClicks("LeftButtonDown","RightButtonUp")
 	skinBackdrop(entry.looterEq2, 0, 0, 0, 1)
 
 	entry.looterEq2.tex = entry.looterEq2:CreateTexture(nil, "OVERLAY")
