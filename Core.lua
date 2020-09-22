@@ -260,7 +260,7 @@ function AddOn:AddItemToLootTable(t)
 			local slotId = self.Utils.GetSlotID(equipLoc)
 			item = raidMember.items[slotId]
 		end
-		self.setItemTooltip(entry.looterEq1, item)
+		if item ~= nil then self.setItemTooltip(entry.looterEq1, item) end
 		if item2 ~= nil then self.setItemTooltip(entry.looterEq2, item2) end
 	end
 
