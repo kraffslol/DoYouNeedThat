@@ -9,6 +9,7 @@ local IsModifiedClick, ChatEdit_InsertLink, DressUpItemLink = IsModifiedClick, C
 local ShowUIPanel, GameTooltip = ShowUIPanel, GameTooltip
 local IsAzeriteEmpoweredItemByID = C_AzeriteEmpoweredItem.IsAzeriteEmpoweredItemByID
 local OpenAzeriteEmpoweredItemUIFromLink = OpenAzeriteEmpoweredItemUIFromLink
+local BackdropTemplateMixin = BackdropTemplateMixin
 
 local function showItemTooltip(itemLink)
     ShowUIPanel(GameTooltip)
@@ -153,7 +154,7 @@ normal_font:SetJustifyH("CENTER")
 
 -- Window
 ---@type Frame
-AddOn.lootFrame = CreateFrame('frame', 'DYNT', UIParent)
+AddOn.lootFrame = CreateFrame('frame', 'DYNT', UIParent, "BackdropTemplate")
 skinBackdrop(AddOn.lootFrame, .1,.1,.1,.8)
 AddOn.lootFrame:EnableMouse(true)
 AddOn.lootFrame:SetMovable(true)
@@ -167,7 +168,7 @@ AddOn.lootFrame:Hide()
 
 -- Header
 ---@type Frame
-AddOn.lootFrame.header = CreateFrame('frame', nil, AddOn.lootFrame)
+AddOn.lootFrame.header = CreateFrame('frame', nil, AddOn.lootFrame, "BackdropTemplate")
 AddOn.lootFrame.header:EnableMouse(true)
 AddOn.lootFrame.header:RegisterForDrag('LeftButton','RightButton')
 AddOn.lootFrame.header:SetScript("OnDragStart", function() AddOn.lootFrame:StartMoving() end)
@@ -182,7 +183,7 @@ skinBackdrop(AddOn.lootFrame.header,.1,.1,.1,1)
 
 local minimized = false
 ---@type Button
-AddOn.lootFrame.header.minimize = CreateFrame("Button", nil, AddOn.lootFrame.header)
+AddOn.lootFrame.header.minimize = CreateFrame("Button", nil, AddOn.lootFrame.header, "BackdropTemplate")
 AddOn.lootFrame.header.minimize:SetPoint("RIGHT", AddOn.lootFrame.header, "RIGHT", -30, 0)
 AddOn.lootFrame.header.minimize:SetText("-")
 skinButton(AddOn.lootFrame.header.minimize, true, "lightgrey")
@@ -201,7 +202,7 @@ AddOn.lootFrame.header.minimize:SetScript("OnClick", function(self)
 end)
 
 ---@type Button
-AddOn.lootFrame.header.close = CreateFrame("Button", nil, AddOn.lootFrame.header)
+AddOn.lootFrame.header.close = CreateFrame("Button", nil, AddOn.lootFrame.header, "BackdropTemplate")
 AddOn.lootFrame.header.close:SetPoint("RIGHT", AddOn.lootFrame.header, "RIGHT", -4, 0)
 AddOn.lootFrame.header.close:SetText("x")
 skinButton(AddOn.lootFrame.header.close, true, "red")
@@ -216,22 +217,23 @@ AddOn.lootFrame.header.text:SetPoint("CENTER", AddOn.lootFrame.header, "CENTER")
 
 -- Vote table
 ---@type Frame
-local vote_table = CreateFrame("Frame", nil, AddOn.lootFrame)
-vote_table:SetPoint("TOPLEFT", AddOn.lootFrame, "TOPLEFT", 10, -50)
-vote_table:SetPoint("BOTTOMRIGHT", AddOn.lootFrame, "BOTTOMRIGHT", -30, 10)
-skinBackdrop(vote_table, .1,.1,.1,.8)
-AddOn.lootFrame.table = vote_table
+local loot_table = CreateFrame("Frame", nil, AddOn.lootFrame, "BackdropTemplate")
+loot_table:SetPoint("TOPLEFT", AddOn.lootFrame, "TOPLEFT", 10, -50)
+loot_table:SetPoint("BOTTOMRIGHT", AddOn.lootFrame, "BOTTOMRIGHT", -30, 10)
+skinBackdrop(loot_table, .1,.1,.1,.8)
+AddOn.lootFrame.table = loot_table
 
 ---@type ScrollFrame
-local scrollframe = CreateFrame("ScrollFrame", nil, vote_table)
-scrollframe:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 0, -2)
-scrollframe:SetPoint("BOTTOMRIGHT", vote_table, "BOTTOMRIGHT", 0, 2)
-vote_table.scrollframe = scrollframe
+local scrollframe = CreateFrame("ScrollFrame", nil, loot_table)
+scrollframe:SetPoint("TOPLEFT", loot_table, "TOPLEFT", 0, -2)
+scrollframe:SetPoint("BOTTOMRIGHT", loot_table, "BOTTOMRIGHT", 0, 2)
+loot_table.scrollframe = scrollframe
 
 ---@type Slider
 local scrollbar = CreateFrame("Slider", nil, scrollframe, "UIPanelScrollBarTemplate")
-scrollbar:SetPoint("TOPLEFT", vote_table, "TOPRIGHT", 6, -16) 
-scrollbar:SetPoint("BOTTOMLEFT", vote_table, "BOTTOMRIGHT", 0, 16)
+Mixin(scrollbar, BackdropTemplateMixin)
+scrollbar:SetPoint("TOPLEFT", loot_table, "TOPRIGHT", 6, -16) 
+scrollbar:SetPoint("BOTTOMLEFT", loot_table, "BOTTOMRIGHT", 0, 16)
 scrollbar:SetMinMaxValues(1, 60)
 scrollbar:SetValueStep(1)
 scrollbar.scrollStep = 1
@@ -239,49 +241,49 @@ scrollbar:SetValue(0)
 scrollbar:SetWidth(16)
 scrollbar:SetScript("OnValueChanged", function (self, value) self:GetParent():SetVerticalScroll(value) end) 
 skinBackdrop(scrollbar, .1,.1,.1,.8)
-vote_table.scrollbar = scrollbar
+loot_table.scrollbar = scrollbar
 
 ---@type Frame
-vote_table.content = CreateFrame("Frame", nil, scrollframe)
-vote_table.content:SetSize(340, 140)
-scrollframe:SetScrollChild(vote_table.content)
+loot_table.content = CreateFrame("Frame", nil, scrollframe)
+loot_table.content:SetSize(340, 140)
+scrollframe:SetScrollChild(loot_table.content)
 
 
-vote_table.item_text = vote_table:CreateFontString(nil, "OVERLAY", "dynt_button")
-vote_table.item_text:SetText("Item")
-vote_table.item_text:SetTextColor(1, 1, 1)
-vote_table.item_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 10, 16)
+loot_table.item_text = loot_table:CreateFontString(nil, "OVERLAY", "dynt_button")
+loot_table.item_text:SetText("Item")
+loot_table.item_text:SetTextColor(1, 1, 1)
+loot_table.item_text:SetPoint("TOPLEFT", loot_table, "TOPLEFT", 10, 16)
 
-vote_table.ilvl_text = vote_table:CreateFontString(nil, "OVERLAY", "dynt_button")
-vote_table.ilvl_text:SetText("Ilvl")
-vote_table.ilvl_text:SetTextColor(1, 1, 1)
-vote_table.ilvl_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 50, 16)
+loot_table.ilvl_text = loot_table:CreateFontString(nil, "OVERLAY", "dynt_button")
+loot_table.ilvl_text:SetText("Ilvl")
+loot_table.ilvl_text:SetTextColor(1, 1, 1)
+loot_table.ilvl_text:SetPoint("TOPLEFT", loot_table, "TOPLEFT", 50, 16)
 
-vote_table.name_text = vote_table:CreateFontString(nil, "OVERLAY", "dynt_button")
-vote_table.name_text:SetText("Looter")
-vote_table.name_text:SetTextColor(1, 1, 1)
-vote_table.name_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 90, 16)
+loot_table.name_text = loot_table:CreateFontString(nil, "OVERLAY", "dynt_button")
+loot_table.name_text:SetText("Looter")
+loot_table.name_text:SetTextColor(1, 1, 1)
+loot_table.name_text:SetPoint("TOPLEFT", loot_table, "TOPLEFT", 90, 16)
 
-vote_table.equipped_text = vote_table:CreateFontString(nil, "OVERLAY", "dynt_button")
-vote_table.equipped_text:SetText("Looter Eq")
-vote_table.equipped_text:SetTextColor(1, 1, 1)
-vote_table.equipped_text:SetPoint("TOPLEFT", vote_table, "TOPLEFT", 175, 16)
+loot_table.equipped_text = loot_table:CreateFontString(nil, "OVERLAY", "dynt_button")
+loot_table.equipped_text:SetText("Looter Eq")
+loot_table.equipped_text:SetTextColor(1, 1, 1)
+loot_table.equipped_text:SetPoint("TOPLEFT", loot_table, "TOPLEFT", 175, 16)
 
 local lastframe = nil
 for i = 1, 20 do
 	---@type Button
-	local entry = CreateFrame("Button", nil, vote_table.content)
-	entry:SetSize(vote_table.content:GetWidth(), 24)
+	local entry = CreateFrame("Button", nil, loot_table.content, "BackdropTemplate")
+	entry:SetSize(loot_table.content:GetWidth(), 24)
 	if (lastframe) then
 		entry:SetPoint("TOPLEFT", lastframe, "BOTTOMLEFT", 0, 2)
 	else
-		entry:SetPoint("TOPLEFT", vote_table.content, "TOPLEFT", 0, -3)
+		entry:SetPoint("TOPLEFT", loot_table.content, "TOPLEFT", 0, -3)
 	end
 	skinBackdrop(entry, 1,1,1,.1)
 	entry:Hide()
 
 	---@type Frame
-	entry.item = CreateFrame("Button", nil, entry)
+	entry.item = CreateFrame("Button", nil, entry, "BackdropTemplate")
 	entry.item:SetSize(20,20)
 	--entry.item:Hide()
 	entry.item:SetPoint("LEFT", entry, "LEFT", 12, 0)
@@ -306,7 +308,7 @@ for i = 1, 20 do
 	entry.name:SetPoint("LEFT", entry, "LEFT", 90, 0)
 
 	---@type Frame
-	entry.looterEq1 = CreateFrame("Button", nil, entry)
+	entry.looterEq1 = CreateFrame("Button", nil, entry, "BackdropTemplate")
 	entry.looterEq1:SetSize(20,20)
 	--entry.looterEq1:Hide()
 	entry.looterEq1:SetPoint("LEFT", entry, "LEFT", 181, 0)
@@ -321,7 +323,7 @@ for i = 1, 20 do
 	entry.looterEq1.tex:SetPoint("BOTTOMRIGHT", entry.looterEq1, "BOTTOMRIGHT", -2, 2)
 
 	---@type Frame
-	entry.looterEq2 = CreateFrame("Button", nil, entry)
+	entry.looterEq2 = CreateFrame("Button", nil, entry, "BackdropTemplate")
 	entry.looterEq2:SetSize(20,20)
 	entry.looterEq2:Hide()
 	entry.looterEq2:SetPoint("LEFT", entry, "LEFT", 203, 0)
@@ -336,7 +338,7 @@ for i = 1, 20 do
 	entry.looterEq2.tex:SetPoint("BOTTOMRIGHT", entry.looterEq2, "BOTTOMRIGHT", -2, 2)
 
 	---@type Button
-	entry.whisper = CreateFrame("Button", nil, entry)
+	entry.whisper = CreateFrame("Button", nil, entry, "BackdropTemplate")
 	entry.whisper:SetSize(45,20)
 	entry.whisper:SetPoint("RIGHT", entry, "RIGHT", -30, 0)
 	entry.whisper:SetText("Whisper")
@@ -348,7 +350,7 @@ for i = 1, 20 do
 	entry.whisper:Hide()
 
 	---@type Button
-	entry.delete = CreateFrame("Button", nil, entry)
+	entry.delete = CreateFrame("Button", nil, entry, "BackdropTemplate")
 	entry.delete:SetSize(25, 20)
 	entry.delete:SetPoint("RIGHT", entry, "RIGHT", -7, 0)
 	entry.delete:SetText("x")

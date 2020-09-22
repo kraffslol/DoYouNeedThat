@@ -1,6 +1,6 @@
 local _, AddOn = ...
-local UnitGUID, GetRealmName, GetPlayerInfoByGUID, UnitClass = UnitGUID, GetRealmName, GetPlayerInfoByGUID, UnitClass
-local tonumber, strmatch, tContains = tonumber, strmatch, tContains
+local UnitGUID, GetRealmName, GetPlayerInfoByGUID = UnitGUID, GetRealmName, GetPlayerInfoByGUID
+local tonumber, strmatch = tonumber, strmatch
 local Utils = {}
 
 -- Item type constants
