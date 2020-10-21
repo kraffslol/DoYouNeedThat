@@ -1,7 +1,7 @@
 local AddonName, AddOn = ...
 
 -- Localize
-local _G, print, gsub, sfind = _G, print, string.gsub, string.find
+local print, gsub, sfind = print, string.gsub, string.find
 local GetItemInfo, IsEquippableItem = GetItemInfo, IsEquippableItem
 local GetInventoryItemLink, UnitClass = GetInventoryItemLink, UnitClass
 local SendChatMessage, UIParent = SendChatMessage, UIParent
@@ -10,12 +10,13 @@ local UnitGUID, IsInRaid, GetNumGroupMembers, GetInstanceInfo = UnitGUID, IsInRa
 local C_Timer, InCombatLockdown, time = C_Timer, InCombatLockdown, time
 local UnitIsConnected, CanInspect, UnitName = UnitIsConnected, CanInspect, UnitName
 local WEAPON, ARMOR, RAID_CLASS_COLORS = WEAPON, ARMOR, RAID_CLASS_COLORS
-local CreateFrame = CreateFrame
+local CreateFrame, GetDetailedItemLevelInfo = CreateFrame, GetDetailedItemLevelInfo
 -- Fix for clients with other languages
 local AUCTION_CATEGORY_ARMOR = AUCTION_CATEGORY_ARMOR
 
+local L = AddOn.L
 local LOOT_ITEM_PATTERN = gsub(LOOT_ITEM, '%%s', '(.+)')
-local LibItemLevel = LibStub("LibItemLevel")
+-- local LibItemLevel = LibStub("LibItemLevel")
 local LibInspect = LibStub("LibInspect")
 local _, playerClass, playerClassId = UnitClass("player")
 local icon = LibStub("LibDBIcon-1.0")
@@ -37,8 +38,8 @@ local LDB = LibStub("LibDataBroker-1.1"):NewDataObject("DoYouNeedThat", {
     OnTooltipShow = function(tooltip)
         if not tooltip or not tooltip.AddLine then return end
         tooltip:AddLine("DoYouNeedThat")
-        tooltip:AddLine("Click to toggle Window")
-        tooltip:AddLine("Right-click to lock Minimap Button")
+        tooltip:AddLine(L["Click to toggle window"])
+        tooltip:AddLine(L["Right-click to lock Minimap Button"])
     end,
 })
 
@@ -48,9 +49,6 @@ AddOn.Entries = {}
 AddOn.RaidMembers = {}
 AddOn.Config = {}
 AddOn.inspectCount = 1
-
--- Globalize
-_G["DoYouNeedThat"] = AddOn
 
 function AddOn.Print(msg)
 	print("[|cff3399FFDYNT|r] " .. msg)
@@ -81,7 +79,8 @@ function AddOn:CHAT_MSG_LOOT(...)
 	-- Should get rid of class specific pieces that you cannnot equip.
 	if not DoesItemContainSpec(item, playerClassId) then return end
 
-	local _, iLvl = LibItemLevel:GetItemInfo(item)
+	--local _, iLvl = LibItemLevel:GetItemInfo(item)
+	local iLvl = GetDetailedItemLevelInfo(item)
 
 	self.Debug(item .. " " .. iLvl)
 
@@ -130,7 +129,7 @@ function AddOn:ADDON_LOADED(addon)
 			lootWindow = {"CENTER", 0, 0},
 			lootWindowOpen = false,
 			config = {
-				whisperMessage = "Do you need [item]?",
+				whisperMessage = L["Default Whisper Message"],
 				openAfterEncounter = true,
 				debug = false,
 				minDelta = 0,
@@ -166,7 +165,8 @@ end
 
 local function GetEquippedIlvlBySlotID(slotID)
 	local item = GetInventoryItemLink('player', slotID)
-	local _, iLvl = LibItemLevel:GetItemInfo(item)
+	--local _, iLvl = LibItemLevel:GetItemInfo(item)
+	local iLvl = GetDetailedItemLevelInfo(item)
 	return iLvl
 end
 
@@ -358,7 +358,8 @@ local function SlashCommandHandler(msg)
 	elseif cmd == "test" and args ~= "" then
 		local player = UnitName("player")
 		local item = {args, player}
-		local _, iLvl = LibItemLevel:GetItemInfo(args)
+		-- local _, iLvl = LibItemLevel:GetItemInfo(args)
+		local iLvl = GetDetailedItemLevelInfo(args)
 		item[3] = iLvl
 		LibInspect:RequestData("items", "player", false)
 		AddOn:AddItemToLootTable(item)
@@ -376,4 +377,4 @@ SlashCmdList["DYNT"] = SlashCommandHandler
 
 -- Bindings
 BINDING_HEADER_DOYOUNEEDTHAT = "DoYouNeedThat"
-BINDING_NAME_DYNT_TOGGLE = "Toggle Window"
+BINDING_NAME_DYNT_TOGGLE = L["Toggle Window"]

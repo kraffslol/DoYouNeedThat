@@ -10,11 +10,12 @@
 
 Libs\LibStub.lua
 Libs\CallbackHandler-1.0.lua
-Libs\LibItemLevel.lua
 Libs\LibInspect.lua
 Libs\LibDataBroker-1.1.lua
 Libs\LibDBIcon-1.0.lua
 
+init.lua
+locales.xml
 Core.lua
 Util.lua
 Frame.lua

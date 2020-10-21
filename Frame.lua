@@ -1,4 +1,5 @@
 local _, AddOn = ...
+local L = AddOn.L
 
 local icon = LibStub("LibDBIcon-1.0")
 local CreateFrame, unpack, GetItemInfo, select = CreateFrame, unpack, GetItemInfo, select
@@ -250,22 +251,22 @@ scrollframe:SetScrollChild(loot_table.content)
 
 
 loot_table.item_text = loot_table:CreateFontString(nil, "OVERLAY", "dynt_button")
-loot_table.item_text:SetText("Item")
+loot_table.item_text:SetText(L["Item"])
 loot_table.item_text:SetTextColor(1, 1, 1)
 loot_table.item_text:SetPoint("TOPLEFT", loot_table, "TOPLEFT", 10, 16)
 
 loot_table.ilvl_text = loot_table:CreateFontString(nil, "OVERLAY", "dynt_button")
-loot_table.ilvl_text:SetText("Ilvl")
+loot_table.ilvl_text:SetText(L["ILvl"])
 loot_table.ilvl_text:SetTextColor(1, 1, 1)
 loot_table.ilvl_text:SetPoint("TOPLEFT", loot_table, "TOPLEFT", 50, 16)
 
 loot_table.name_text = loot_table:CreateFontString(nil, "OVERLAY", "dynt_button")
-loot_table.name_text:SetText("Looter")
+loot_table.name_text:SetText(L["Looter"])
 loot_table.name_text:SetTextColor(1, 1, 1)
 loot_table.name_text:SetPoint("TOPLEFT", loot_table, "TOPLEFT", 90, 16)
 
 loot_table.equipped_text = loot_table:CreateFontString(nil, "OVERLAY", "dynt_button")
-loot_table.equipped_text:SetText("Looter Eq")
+loot_table.equipped_text:SetText(L["Looter Eq"])
 loot_table.equipped_text:SetTextColor(1, 1, 1)
 loot_table.equipped_text:SetPoint("TOPLEFT", loot_table, "TOPLEFT", 175, 16)
 
@@ -341,7 +342,7 @@ for i = 1, 20 do
 	entry.whisper = CreateFrame("Button", nil, entry, "BackdropTemplate")
 	entry.whisper:SetSize(45,20)
 	entry.whisper:SetPoint("RIGHT", entry, "RIGHT", -30, 0)
-	entry.whisper:SetText("Whisper")
+	entry.whisper:SetText(L["Whisper"])
 	skinButton(entry.whisper, true, "blue")
 	entry.whisper:SetScript("OnClick", function() 
 		AddOn:SendWhisper(entry.itemLink, entry.looter)
@@ -376,14 +377,14 @@ function AddOn.createOptionsFrame()
     ---@type CheckButton
     options.debug = CreateFrame("CheckButton", "DYNT_Options_Debug", options, "ChatConfigCheckButtonTemplate")
     options.debug:SetPoint("TOPLEFT", options, "TOPLEFT", 12, -20)
-    DYNT_Options_DebugText:SetText("Debug")
+    DYNT_Options_DebugText:SetText(L["Debug"])
     if AddOn.Config.debug then options.debug:SetChecked(true) end
 
     -- Open after boss kill toggle
     ---@type CheckButton
     options.openAfterEncounter = CreateFrame("CheckButton", "DYNT_Options_OpenAfterEncounter", options, "ChatConfigCheckButtonTemplate")
     options.openAfterEncounter:SetPoint("TOPLEFT", options, "TOPLEFT", 12, -40)
-    DYNT_Options_OpenAfterEncounterText:SetText("Open loot window after encounter")
+    DYNT_Options_OpenAfterEncounterText:SetText(L["Open loot window after encounter"])
     if AddOn.Config.openAfterEncounter then options.openAfterEncounter:SetChecked(true) end
 
     -- Whisper message
@@ -409,13 +410,13 @@ function AddOn.createOptionsFrame()
     options.whisperMessage.labelText:SetTextColor(1, 1, 1)
     options.whisperMessage.labelText:SetShadowColor(0, 0, 0)
     options.whisperMessage.labelText:SetShadowOffset(1, -1)
-    options.whisperMessage.labelText:SetText("Whisper message (Use [item] shortcut if you want to link the item.)")
+    options.whisperMessage.labelText:SetText(L["Whisper Message"])
 
 	-- Hide minimap button
 	---@type CheckButton
 	options.hideMinimap = CreateFrame("CheckButton", "DYNT_Options_HideMinimap", options, "ChatConfigCheckButtonTemplate")
 	options.hideMinimap:SetPoint("TOPLEFT", options, "TOPLEFT", 12, -110)
-	DYNT_Options_HideMinimapText:SetText("Hide minimap button")
+	DYNT_Options_HideMinimapText:SetText(L["Hide minimap button"])
 	if AddOn.db.minimap.hide then options.hideMinimap:SetChecked(true) end
 
     options.minDelta = CreateFrame("Slider", "DYNT_Options_MinDelta", options, "OptionsSliderTemplate")
@@ -428,7 +429,7 @@ function AddOn.createOptionsFrame()
     options.minDelta:SetValueStep(1)
     options.minDelta:SetObeyStepOnDrag(true)
     options.minDelta:SetScript("OnValueChanged", function (_, val) DYNT_Options_MinDeltaText:SetText(val) end)
-    options.tooltipText = "Minimum itemlevel allowed (Your equipped itemlevel - offset)"
+    options.tooltipText = L["Minimum itemlevel allowed"]
     DYNT_Options_MinDeltaLow:SetText("0")
     DYNT_Options_MinDeltaHigh:SetText("30")
     DYNT_Options_MinDeltaText:SetText(AddOn.Config.minDelta)
@@ -441,7 +442,7 @@ function AddOn.createOptionsFrame()
     options.minDelta.labelText:SetTextColor(1, 1, 1)
     options.minDelta.labelText:SetShadowColor(0, 0, 0)
     options.minDelta.labelText:SetShadowOffset(1, -1)
-    options.minDelta.labelText:SetText("Minimum Itemlevels lower (Equipped itemlevel - offset)")
+    options.minDelta.labelText:SetText(L["Minimum itemlevels lower"])
 
     -- Set the field values to their value in SavedVariables.
     function options.refreshFields()
